@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:image/image.dart' as img;
+import 'dart:math';
 
 final _logger = Logger('ImageFilters');
 
@@ -119,7 +120,11 @@ class ImageFilters {
     final image = img.decodeImage(imageBytes);
     if (image == null) return imageBytes;
     
-    final adjusted = img.adjustColor(image, brightness: (factor * 100).toInt());
+    // Convert factor to a range between -100 and 100 as expected by img.adjustColor
+    final adjustmentValue = (factor * 100).toInt();
+    _logger.info('Applying brightness adjustment with value: $adjustmentValue');
+    
+    final adjusted = img.adjustColor(image, brightness: adjustmentValue);
     return Uint8List.fromList(img.encodeJpg(adjusted));
   }
   
@@ -183,5 +188,211 @@ class ImageFilters {
     
     final inverted = img.invert(image);
     return Uint8List.fromList(img.encodeJpg(inverted));
+  }
+
+  /// Applies a vignette effect to the image
+  static Future<Uint8List> applyVignette(
+    Uint8List imageBytes,
+    {double intensity = 0.5, double radius = 0.5}
+  ) async {
+    try {
+      final result = await _channel.invokeMethod<Uint8List>(
+        'applyVignette',
+        {
+          'imageBytes': imageBytes,
+          'intensity': intensity,
+          'radius': radius,
+        },
+      );
+      
+      if (result != null) {
+        _logger.info('Vignette filter applied successfully using native implementation');
+        return result;
+      }
+      
+      // Fallback to Dart implementation
+      return _applyVignetteDart(imageBytes, intensity, radius);
+    } catch (e) {
+      _logger.warning('Failed to apply vignette filter using native implementation: $e');
+      return _applyVignetteDart(imageBytes, intensity, radius);
+    }
+  }
+  
+  /// Dart implementation of vignette filter
+  static Uint8List _applyVignetteDart(
+    Uint8List imageBytes,
+    double intensity,
+    double radius,
+  ) {
+    _logger.info('Using Dart implementation for vignette filter');
+    final image = img.decodeImage(imageBytes);
+    if (image == null) return imageBytes;
+    
+    final width = image.width;
+    final height = image.height;
+    final centerX = width / 2;
+    final centerY = height / 2;
+    final maxDistance = sqrt(centerX * centerX + centerY * centerY);
+    
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        final distance = sqrt(
+          pow(x - centerX, 2) + pow(y - centerY, 2)
+        ) / maxDistance;
+        
+        final factor = 1 - (distance * distance * intensity * radius);
+        final pixel = image.getPixel(x, y);
+        
+        image.setPixelRgba(
+          x,
+          y,
+          (pixel.r * factor).round(),
+          (pixel.g * factor).round(),
+          (pixel.b * factor).round(),
+          pixel.a,
+        );
+      }
+    }
+    
+    return Uint8List.fromList(img.encodeJpg(image));
+  }
+
+  /// Applies a watercolor effect to the image
+  static Future<Uint8List> applyWatercolor(
+    Uint8List imageBytes,
+    {int radius = 5, double intensity = 0.5}
+  ) async {
+    try {
+      final result = await _channel.invokeMethod<Uint8List>(
+        'applyWatercolor',
+        {
+          'imageBytes': imageBytes,
+          'radius': radius,
+          'intensity': intensity,
+        },
+      );
+      
+      if (result != null) {
+        _logger.info('Watercolor filter applied successfully using native implementation');
+        return result;
+      }
+      
+      // Fallback to Dart implementation
+      return _applyWatercolorDart(imageBytes, radius, intensity);
+    } catch (e) {
+      _logger.warning('Failed to apply watercolor filter using native implementation: $e');
+      return _applyWatercolorDart(imageBytes, radius, intensity);
+    }
+  }
+  
+  /// Dart implementation of watercolor filter
+  static Uint8List _applyWatercolorDart(
+    Uint8List imageBytes,
+    int radius,
+    double intensity,
+  ) {
+    _logger.info('Using Dart implementation for watercolor filter');
+    final image = img.decodeImage(imageBytes);
+    if (image == null) return imageBytes;
+    
+    // Apply blur for edge preservation instead of bilateral filter
+    final blurred = img.gaussianBlur(image, radius: radius);
+    
+    // Enhance colors and contrast for watercolor effect
+    final enhanced = img.adjustColor(
+      blurred,
+      saturation: 1.2,
+      contrast: 1.1,
+    );
+    
+    return Uint8List.fromList(img.encodeJpg(enhanced));
+  }
+
+  /// Applies an oil painting effect to the image
+  static Future<Uint8List> applyOilPainting(
+    Uint8List imageBytes,
+    {int radius = 4, int levels = 20}
+  ) async {
+    try {
+      final result = await _channel.invokeMethod<Uint8List>(
+        'applyOilPainting',
+        {
+          'imageBytes': imageBytes,
+          'radius': radius,
+          'levels': levels,
+        },
+      );
+      
+      if (result != null) {
+        _logger.info('Oil painting filter applied successfully using native implementation');
+        return result;
+      }
+      
+      // Fallback to Dart implementation
+      return _applyOilPaintingDart(imageBytes, radius, levels);
+    } catch (e) {
+      _logger.warning('Failed to apply oil painting filter using native implementation: $e');
+      return _applyOilPaintingDart(imageBytes, radius, levels);
+    }
+  }
+  
+  /// Dart implementation of oil painting filter
+  static Uint8List _applyOilPaintingDart(
+    Uint8List imageBytes,
+    int radius,
+    int levels,
+  ) {
+    _logger.info('Using Dart implementation for oil painting filter');
+    final image = img.decodeImage(imageBytes);
+    if (image == null) return imageBytes;
+    
+    final width = image.width;
+    final height = image.height;
+    final result = img.Image(width: width, height: height);
+    
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        var maxIntensity = 0;
+        var maxCount = 0;
+        var r = 0, g = 0, b = 0;
+        
+        for (var ky = -radius; ky <= radius; ky++) {
+          for (var kx = -radius; kx <= radius; kx++) {
+            final px = x + kx;
+            final py = y + ky;
+            
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+              final pixel = image.getPixel(px, py);
+              final intensity = ((pixel.r.toInt() + pixel.g.toInt() + pixel.b.toInt()) / 3).round();
+              final level = (intensity * levels / 255).round();
+              
+              if (level > maxIntensity) {
+                maxIntensity = level;
+                maxCount = 1;
+                r = pixel.r.toInt();
+                g = pixel.g.toInt();
+                b = pixel.b.toInt();
+              } else if (level == maxIntensity) {
+                maxCount++;
+                r += pixel.r.toInt();
+                g += pixel.g.toInt();
+                b += pixel.b.toInt();
+              }
+            }
+          }
+        }
+        
+        result.setPixelRgba(
+          x,
+          y,
+          (r / maxCount).round(),
+          (g / maxCount).round(),
+          (b / maxCount).round(),
+          255,
+        );
+      }
+    }
+    
+    return Uint8List.fromList(img.encodeJpg(result));
   }
 } 

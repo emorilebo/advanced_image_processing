@@ -1,6 +1,6 @@
 name: advanced_image_processing_toolkit
 description: Plugin for advanced image processing, featuring real-time filters, object recognition, and AR capabilities.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/emorilebo/advanced_image_processing
 repository: https://github.com/emorilebo/advanced_image_processing
 documentation: https://github.com/emorilebo/advanced_image_processing/wiki
@@ -17,18 +17,28 @@ dependencies:
   plugin_platform_interface: ^2.1.7
   image: ^4.1.3
   camera: ^0.10.5+9
-  google_ml_kit: ^0.16.3
+  google_ml_kit: ^0.16.2
   image_picker: ^1.0.7
   logging: ^1.2.0
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.0
   # AR plugins marked as optional to prevent compilation issues
   # To use AR features, add these dependencies in your own app
-  # arkit_plugin: ^1.0.7 # iOS AR
-  # arcore_flutter_plugin: ^0.1.0 # Android AR
+  arkit_plugin: ^1.0.7 # iOS AR
+  arcore_flutter_plugin: ^0.1.0 # Android AR
+  
+  # ML Kit plugins - using compatible versions
+  google_mlkit_commons: ^0.5.0
+  google_mlkit_text_recognition: ^0.10.0
+  google_mlkit_face_detection: ^0.8.0
+  google_mlkit_pose_detection: ^0.9.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^3.0.1
+  mockito: ^5.4.4
+  build_runner: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -30,14 +30,20 @@ All notable changes to the Advanced Image Processing Toolkit will be documented 
   - Battery consumption optimizations
   - Parallel processing support
 
-## 0.1.0 - 2024-03-16
+## 0.1.1
 
-* Major refactoring for better cross-platform compatibility
-* Removed direct dependencies on AR libraries to make them optional
-* Added fallback Dart implementations for all features
-* Improved error handling and logging
-* Fixed platform compatibility issues
-* Updated example app to demonstrate core functionality
+* Fixed implementation issues with image filters
+* Improved object recognition with ML Kit integration
+* Added real face and pose detection
+* Added watercolor and oil painting artistic filters
+* Fixed null safety issues
+* Updated documentation
+
+## 0.1.0
+
+* Initial release with basic filters and object detection
+* Core functionality for image processing
+* Preliminary AR support
 
 ## 0.0.10 - 2023-02-10
 

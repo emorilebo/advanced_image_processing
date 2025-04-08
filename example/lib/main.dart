@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,16 +11,18 @@ import 'package:advanced_image_processing_toolkit/advanced_image_processing_tool
 import 'package:advanced_image_processing_toolkit/src/filters.dart';
 import 'package:advanced_image_processing_toolkit/src/object_recognition.dart';
 import 'package:image/image.dart' as img;
+import 'dart:io' show File;
 
 final _logger = Logger('AdvancedImageProcessingToolkit');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Request permissions
-  await Permission.camera.request();
-  await Permission.photos.request();
-  await Permission.storage.request();
+  // Only request permissions on mobile platforms
+  if (!kIsWeb) {
+    await Permission.photos.request();
+    await Permission.storage.request();
+  }
   
   // Initialize logging
   Logger.root.level = Level.INFO;
@@ -61,11 +64,33 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Uint8List? _imageBytes;
-  File? _processedImageFile;
+  Uint8List? _processedImageBytes; // Use Uint8List for web compatibility
   final _picker = ImagePicker();
   List<DetectedObject>? _detectedObjects;
   bool _isProcessing = false;
   String _processingMethod = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Load sample image on startup
+    _loadSampleImage();
+  }
+
+  Future<void> _loadSampleImage() async {
+    try {
+      final ByteData data = await rootBundle.load('assets/sample_image.jpg');
+      final bytes = data.buffer.asUint8List();
+      setState(() {
+        _imageBytes = bytes;
+        _processedImageBytes = null;
+        _detectedObjects = null;
+      });
+    } catch (e) {
+      _logger.warning('Failed to load sample image: $e');
+      _showError('Failed to load sample image: $e');
+    }
+  }
 
   Future<void> _pickImage() async {
     try {
@@ -74,7 +99,7 @@ class _HomePageState extends State<HomePage> {
         final bytes = await image.readAsBytes();
         setState(() {
           _imageBytes = bytes;
-          _processedImageFile = null;
+          _processedImageBytes = null;
           _detectedObjects = null;
         });
       }
@@ -85,13 +110,25 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _takePhoto() async {
+    // Request camera permission only when needed and not on web
+    if (!kIsWeb) {
+      var status = await Permission.camera.status;
+      if (!status.isGranted) {
+        status = await Permission.camera.request();
+        if (!status.isGranted) {
+          _showError('Camera permission is required to take a photo');
+          return;
+        }
+      }
+    }
+    
     try {
       final image = await _picker.pickImage(source: ImageSource.camera);
       if (image != null) {
         final bytes = await image.readAsBytes();
         setState(() {
           _imageBytes = bytes;
-          _processedImageFile = null;
+          _processedImageBytes = null;
           _detectedObjects = null;
         });
       }
@@ -110,22 +147,14 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final tempDir = await getTemporaryDirectory();
-      final outputPath = '${tempDir.path}/processed_image.jpg';
       Uint8List processedBytes;
       
       switch (method) {
         case 'grayscale':
-          final image = img.decodeImage(_imageBytes!);
-          if (image == null) throw Exception('Could not decode image');
-          final grayscaled = img.grayscale(image);
-          processedBytes = Uint8List.fromList(img.encodeJpg(grayscaled));
+          processedBytes = await ImageFilters.applyGrayscale(_imageBytes!);
           break;
         case 'blur':
-          final image = img.decodeImage(_imageBytes!);
-          if (image == null) throw Exception('Could not decode image');
-          final blurred = img.gaussianBlur(image, radius: 5);
-          processedBytes = Uint8List.fromList(img.encodeJpg(blurred));
+          processedBytes = await ImageFilters.applyBlur(_imageBytes!, 5.0);
           break;
         case 'brightness_increase':
           processedBytes = await ImageFilters.adjustBrightness(_imageBytes!, 0.5);
@@ -133,29 +162,80 @@ class _HomePageState extends State<HomePage> {
         case 'brightness_decrease':
           processedBytes = await ImageFilters.adjustBrightness(_imageBytes!, -0.5);
           break;
+        case 'sepia':
+          processedBytes = await ImageFilters.applySepia(_imageBytes!);
+          break;
+        case 'invert':
+          processedBytes = await ImageFilters.applyInvert(_imageBytes!);
+          break;
+        case 'vignette':
+          processedBytes = await ImageFilters.applyVignette(
+            _imageBytes!,
+            intensity: 0.5,
+            radius: 0.5,
+          );
+          break;
+        case 'watercolor':
+          processedBytes = await ImageFilters.applyWatercolor(
+            _imageBytes!,
+            radius: 5,
+            intensity: 0.5,
+          );
+          break;
+        case 'oil_painting':
+          processedBytes = await ImageFilters.applyOilPainting(
+            _imageBytes!,
+            radius: 4,
+            levels: 20,
+          );
+          break;
         case 'object_detection':
-          final detections = await ObjectRecognition.detectObjects(_imageBytes!);
-          setState(() {
-            _detectedObjects = detections;
-          });
-          processedBytes = _imageBytes!; // For now, just use the original image
+          try {
+            final detections = await ObjectRecognition.detectObjects(_imageBytes!);
+            setState(() {
+              _detectedObjects = detections;
+            });
+            _logger.info('Detected ${detections.length} objects');
+            
+            // Draw bounding boxes
+            processedBytes = await ObjectRecognition.drawDetections(
+              _imageBytes!,
+              detections,
+            );
+          } catch (e) {
+            _logger.warning('Failed to detect objects: $e');
+            processedBytes = _imageBytes!;
+          }
           break;
         default:
           processedBytes = _imageBytes!;
       }
       
-      // Save the processed image to a file
-      await File(outputPath).writeAsBytes(processedBytes);
+      // Save the processed image (as bytes for web compatibility)
+      if (!kIsWeb) {
+        try {
+          final tempDir = await getTemporaryDirectory();
+          final outputPath = '${tempDir.path}/processed_image.jpg';
+          await File(outputPath).writeAsBytes(processedBytes);
+        } catch (e) {
+          _logger.warning('Failed to save processed image to file: $e');
+        }
+      }
       
+      // Update UI with processed image
       setState(() {
-        _processedImageFile = File(outputPath);
+        _processedImageBytes = processedBytes;
         _isProcessing = false;
       });
+      
+      // Log success
+      _logger.info('Successfully processed image with $method');
     } catch (e) {
       setState(() {
         _isProcessing = false;
       });
-      _showError('Error processing image: $e');
+      _logger.warning('Failed to process image: $e');
+      _showError('Failed to process image: $e');
     }
   }
   
@@ -171,130 +251,123 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Advanced Image Processing Demo'),
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadSampleImage,
+            tooltip: 'Load Sample Image',
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Advanced Image Processing Toolkit v${AdvancedImageProcessingToolkit.version}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: _pickImage,
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Pick Image'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _takePhoto,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Take Photo'),
-                  ),
+                  if (_imageBytes != null) ...[
+                    Image.memory(
+                      _processedImageBytes ?? _imageBytes!,
+                      fit: BoxFit.contain,
+                    ),
+                    if (_detectedObjects != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Detected Objects:',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      ..._detectedObjects!.map((obj) => ListTile(
+                        title: Text(obj.label),
+                        subtitle: Text(
+                          'Confidence: ${(obj.confidence * 100).toStringAsFixed(1)}%',
+                        ),
+                        trailing: obj.additionalData != null
+                            ? IconButton(
+                                icon: const Icon(Icons.info),
+                                onPressed: () => _showObjectDetails(obj),
+                              )
+                            : null,
+                      )),
+                    ],
+                  ],
                 ],
               ),
-              const SizedBox(height: 20),
-              if (_imageBytes != null) ...[
-                const Text('Original Image', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                Image.memory(
-                  _imageBytes!,
-                  height: 200,
-                  fit: BoxFit.contain,
+            ),
+          ),
+          if (_isProcessing)
+            const LinearProgressIndicator(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Pick Image'),
+                  onPressed: _pickImage,
                 ),
-                const SizedBox(height: 20),
-                _buildProcessingOptions(),
-                const SizedBox(height: 20),
-                if (_isProcessing) ...[
-                  const Center(child: CircularProgressIndicator()),
-                  const SizedBox(height: 10),
-                  Text('Processing with $_processingMethod...', textAlign: TextAlign.center),
-                ] else if (_processedImageFile != null) ...[
-                  const Text('Processed Image', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  Image.file(
-                    _processedImageFile!,
-                    height: 200,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-                if (_detectedObjects != null && _detectedObjects!.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  const Text('Detected Objects', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListView.builder(
-                      itemCount: _detectedObjects!.length,
-                      itemBuilder: (context, index) {
-                        final obj = _detectedObjects![index];
-                        return ListTile(
-                          dense: true,
-                          title: Text(obj.label),
-                          subtitle: Text('Confidence: ${(obj.confidence * 100).toStringAsFixed(2)}%'),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ] else ...[
-                const SizedBox(height: 100),
-                const Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.image, size: 80, color: Colors.grey),
-                      SizedBox(height: 20),
-                      Text('No image selected. Please pick an image or take a photo.'),
-                    ],
-                  ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Take Photo'),
+                  onPressed: _takePhoto,
+                ),
+                const SizedBox(width: 16),
+                _buildFilterButton('Grayscale', 'grayscale'),
+                _buildFilterButton('Blur', 'blur'),
+                _buildFilterButton('Brightness +', 'brightness_increase'),
+                _buildFilterButton('Brightness -', 'brightness_decrease'),
+                _buildFilterButton('Sepia', 'sepia'),
+                _buildFilterButton('Invert', 'invert'),
+                _buildFilterButton('Vignette', 'vignette'),
+                _buildFilterButton('Watercolor', 'watercolor'),
+                _buildFilterButton('Oil Painting', 'oil_painting'),
+                _buildFilterButton('Detect Objects', 'object_detection'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterButton(String label, String method) {
+    return ElevatedButton(
+      onPressed: _isProcessing ? null : () => _processImage(method),
+      child: Text(label),
+    );
+  }
+
+  void _showObjectDetails(DetectedObject object) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(object.label),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Confidence: ${(object.confidence * 100).toStringAsFixed(1)}%'),
+              const SizedBox(height: 8),
+              if (object.additionalData != null) ...[
+                const Text('Additional Data:'),
+                const SizedBox(height: 4),
+                ...object.additionalData!.entries.map(
+                  (e) => Text('${e.key}: ${e.value}'),
                 ),
               ],
             ],
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildProcessingOptions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Text('Processing Options', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
-          children: [
-            _buildProcessingButton('Grayscale', 'grayscale'),
-            _buildProcessingButton('Blur', 'blur'),
-            _buildProcessingButton('Brightness +', 'brightness_increase'),
-            _buildProcessingButton('Brightness -', 'brightness_decrease'),
-            _buildProcessingButton('Object Detection', 'object_detection'),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProcessingButton(String label, String method) {
-    return ElevatedButton(
-      onPressed: () => _processImage(method),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-      child: Text(label),
     );
   }
 }
