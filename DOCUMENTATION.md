@@ -1,6 +1,6 @@
 # Advanced Image Processing Toolkit - Documentation
 
-This document provides detailed information on how to use the Advanced Image Processing Toolkit for Flutter. It covers installation, configuration, and usage of all major features.
+This document provides detailed information on how to use the Advanced Image Processing Toolkit (version 0.1.2) for Flutter. It covers installation, configuration, and usage of all major features.
 
 ## Table of Contents
 

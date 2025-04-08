@@ -2,6 +2,22 @@
 
 All notable changes to the Advanced Image Processing Toolkit will be documented in this file.
 
+## [0.1.2] - 2025-04-08
+
+### Added
+- Improved documentation and examples
+- Enhanced error handling for image processing operations
+- Better platform compatibility checks
+
+### Fixed
+- Documentation inconsistencies with pub.dev
+- Version number alignment across all files
+- Minor performance improvements in filter applications
+
+### Changed
+- Updated dependency compatibility information
+- Improved code organization and structure
+
 ## [Upcoming] - Future Release
 
 ### Planned Features

@@ -1,6 +1,6 @@
 # Advanced Image Processing Toolkit - API Reference
 
-This document provides a detailed reference of all classes, methods, and parameters available in the Advanced Image Processing Toolkit.
+This document provides a detailed reference of all classes, methods, and parameters available in the Advanced Image Processing Toolkit (version 0.1.2).
 
 ## Table of Contents
 

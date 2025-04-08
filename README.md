@@ -38,7 +38,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  advanced_image_processing_toolkit: ^0.1.0
+  advanced_image_processing_toolkit: ^0.1.2
 ```
 
 For AR features, add these optional dependencies:
