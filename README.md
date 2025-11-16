@@ -157,16 +157,27 @@ if (AugmentedReality.isARSupported()) {
 
 - Flutter SDK: >=3.3.0
 - Dart SDK: >=3.0.0
-- image: ^4.1.3
-- camera: ^0.10.5+9
-- google_ml_kit: ^0.16.3
+- image: ^4.5.4
+- camera: ^0.11.3
+- google_ml_kit: ^0.16.2
 - image_picker: ^1.0.7
 - logging: ^1.2.0
 - path_provider: ^2.1.2
 - permission_handler: ^11.3.0
-- google_mlkit_text_recognition: ^0.11.0
+- google_mlkit_text_recognition: ^0.10.0
 - google_mlkit_face_detection: ^0.8.0
 - google_mlkit_pose_detection: ^0.9.0
+
+## Author
+
+**Godfrey Lebo** - Software Developer, Car Racer, Debugger, Clean Architecture Enthusiast
+
+- 📧 Email: [emorylebo@gmail.com](mailto:emorylebo@gmail.com)
+- 💼 LinkedIn: [godfreylebo](https://www.linkedin.com/in/godfreylebo/)
+- 🌐 Portfolio: [godfreylebo.vercel.app](https://godfreylebo.vercel.app/)
+- 🐙 GitHub: [@emorilebo](https://github.com/emorilebo)
+
+> Experienced Senior Fullstack Developer with over 6 years of professional experience specializing in Dart, JavaScript, and Rust. Proven track record of building scalable, high-performance applications.
 
 ## Contributing
 

@@ -18,8 +18,8 @@ void main() {
       expect(result, isA<bool>());
     });
 
-    test('isARSupported returns device capability', () async {
-      final result = await AugmentedReality.isARSupported();
+    test('isARSupported returns device capability', () {
+      final result = AugmentedReality.isARSupported();
       expect(result, isA<bool>());
     });
   });

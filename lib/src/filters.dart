@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:image/image.dart' as img;
 import 'dart:math';
+import 'dart:typed_data';
 
 final _logger = Logger('ImageFilters');
 
