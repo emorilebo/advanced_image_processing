@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'advanced_image_processing_toolkit'
-  s.version          = '0.1.2'
+  s.version          = '0.1.3'
   s.summary          = 'Advanced image processing toolkit for Flutter.'
   s.description      = <<-DESC
 A comprehensive image processing toolkit for Flutter that includes basic filters, advanced effects, and ML-powered object recognition capabilities.

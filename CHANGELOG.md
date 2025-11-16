@@ -2,6 +2,24 @@
 
 All notable changes to the Advanced Image Processing Toolkit will be documented in this file.
 
+## [0.1.3] - 2025-01-16
+
+### Fixed
+- Fixed version consistency across all files
+- Removed deprecated `authors` field from pubspec.yaml
+- Fixed test issues (static method calls, await on bool)
+- Cleaned up unnecessary imports
+
+### Changed
+- Updated dependencies (image: ^4.5.4, camera: ^0.11.3)
+- Updated metadata with correct author information
+- Added LinkedIn and portfolio links to README
+- Streamlined documentation (removed redundant files)
+
+### Added
+- Complete author metadata across all files
+- Professional links (LinkedIn, portfolio) in README
+
 ## [0.1.2] - 2025-04-08
 
 ### Added
