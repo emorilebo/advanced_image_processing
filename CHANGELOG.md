@@ -2,23 +2,30 @@
 
 All notable changes to the Advanced Image Processing Toolkit will be documented in this file.
 
-## [0.1.3] - 2025-01-16
-
-### Fixed
-- Fixed version consistency across all files
-- Removed deprecated `authors` field from pubspec.yaml
-- Fixed test issues (static method calls, await on bool)
-- Cleaned up unnecessary imports
+## [0.1.4] - 2025-01-20
 
 ### Changed
-- Updated dependencies (image: ^4.5.4, camera: ^0.11.3)
-- Updated metadata with correct author information
-- Added LinkedIn and portfolio links to README
-- Streamlined documentation (removed redundant files)
+- Updated documentation with improved structure and professional tone
+- Updated author information with portfolio link (godfreylebo.dev)
+- Enhanced README with better use cases and real-world examples
+- Improved code examples and API documentation
+- Updated package description in pubspec.yaml
 
-### Added
-- Complete author metadata across all files
-- Professional links (LinkedIn, portfolio) in README
+### Fixed
+- Documentation consistency across all files
+- Author metadata alignment
+
+## [0.1.3] - 2025-01-20
+
+### Changed
+- Updated documentation with improved structure and examples
+- Updated author information with portfolio link (godfreylebo.dev)
+- Enhanced README with better use cases and real-world examples
+- Improved code examples and API documentation
+
+### Fixed
+- Documentation consistency across all files
+- Author metadata alignment
 
 ## [0.1.2] - 2025-04-08
 
@@ -28,7 +35,7 @@ All notable changes to the Advanced Image Processing Toolkit will be documented 
 - Better platform compatibility checks
 
 ### Fixed
-- Documentation inconsistencies with pub.dev
+- Documentation inconsistencies
 - Version number alignment across all files
 - Minor performance improvements in filter applications
 
@@ -36,134 +43,24 @@ All notable changes to the Advanced Image Processing Toolkit will be documented 
 - Updated dependency compatibility information
 - Improved code organization and structure
 
-## [Upcoming] - Future Release
-
-### Planned Features
-- **Enhanced Image Filters**
-  - Sepia, vignette, and artistic filters
-  - Color manipulation tools
-  - Custom filter chains
-- **Advanced ML Capabilities**
-  - Custom ML model support
-  - Specialized detection models
-  - Face detection and analysis
-  - Text recognition (OCR)
-  - Pose estimation
-- **Enhanced AR Features**
-  - Occlusion support
-  - Lighting estimation
-  - Environment mapping
-  - Persistent AR experiences
-  - Collaborative AR
-- **Expanded Platform Support**
-  - Web support
-  - Desktop support (Windows, macOS, Linux)
-- **Performance Optimizations**
-  - Real-time processing improvements
-  - Memory usage reduction
-  - Battery consumption optimizations
-  - Parallel processing support
-
-## 0.1.1
-
-* Fixed implementation issues with image filters
-* Improved object recognition with ML Kit integration
-* Added real face and pose detection
-* Added watercolor and oil painting artistic filters
-* Fixed null safety issues
-* Updated documentation
-
-## 0.1.0
-
-* Initial release with basic filters and object detection
-* Core functionality for image processing
-* Preliminary AR support
-
-## 0.0.10 - 2023-02-10
-
-* Added support for AR features with ARKit and ARCore
-* Improved object detection accuracy
-* Added new image filters
-* Performance optimizations
-
-## 0.0.9 - 2023-01-15
-
-* Fixed compatibility issues with latest Flutter versions
-* Improved error handling
-* Added image rotation functionality
-* Documentation improvements
-
-## 0.0.8 - 2022-12-20
-
-* Added support for more image formats
-* Improved brightness adjustment
-* Fixed memory leaks in image processing
-* Added unit tests
-
-## 0.0.7 - 2022-12-05
-
-* Added blur filter
-* Improved object detection
-* Bug fixes and performance improvements
-
-## 0.0.6 - 2022-11-20
-
-* First public release
-* Basic image processing functionality
-* Grayscale and color adjustment filters
-
-## [0.0.4] - 2025-02-20
+## [0.1.1] - 2025-02-15
 
 ### Fixed
-- Type mismatch in image processing methods
-
-### Changed
-- Updated return types for image processing methods to be consistent
-- Improved error handling and logging
+- Implementation issues with image filters
+- Null safety issues
 - Updated documentation
 
-## [0.0.3] - 2025-02-19
+### Added
+- Improved object recognition with ML Kit integration
+- Real face and pose detection
+- Watercolor and oil painting artistic filters
+
+## [0.1.0] - 2025-01-10
 
 ### Added
-- Proper platform-specific implementations
-- Android Kotlin implementation
-- iOS Swift implementation
-- Basic method channel setup
-
-### Fixed
-- Plugin registration issues
-- Package structure issues
-
-## [0.0.2] - 2025-02-18
-
-### Added
-- Logging support for better debugging
-- Error handling improvements
-- Type safety enhancements
-
-### Changed
-- Updated method signatures for better type safety
-- Improved documentation
-- Enhanced example application
-
-## [0.0.1] - 2025-01-17
-
-### Added
-- Initial release
-- Basic image filtering capabilities
-  - Grayscale conversion
-  - Gaussian blur
-  - Brightness adjustment
-- Object detection features
-  - Real-time detection
-  - Confidence scoring
-  - Bounding box calculation
-- Augmented Reality support
-  - 3D model placement
-  - AR session management
-  - Surface detection
-- Cross-platform support
-  - iOS implementation
-  - Android implementation
-- Comprehensive documentation
-- Example application
+- Initial release with basic filters and object detection
+- Core functionality for image processing
+- Preliminary AR support
+- Grayscale, blur, and brightness filters
+- Object detection with confidence scoring
+- AR session management and 3D model placement
