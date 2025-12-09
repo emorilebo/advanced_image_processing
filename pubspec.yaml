@@ -1,6 +1,6 @@
 name: advanced_image_processing_toolkit
 description: A comprehensive Flutter package for advanced image processing, featuring real-time filters, AI-powered object recognition, and augmented reality capabilities.
-version: 0.1.4
+version: 0.1.5
 homepage: https://github.com/emorilebo/advanced_image_processing
 repository: https://github.com/emorilebo/advanced_image_processing
 documentation: https://github.com/emorilebo/advanced_image_processing/wiki

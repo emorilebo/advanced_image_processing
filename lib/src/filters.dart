@@ -26,30 +26,55 @@ final _logger = Logger('ImageFilters');
 class ImageFilters {
   static const MethodChannel _channel = MethodChannel('advanced_image_processing_toolkit/filters');
 
-  /// Applies grayscale filter to the provided image data
-  static Future<Uint8List> applyGrayscale(Uint8List imageData) async {
+  /// Generic helper to invoke native method with fallback to Dart implementation
+  static Future<Uint8List> _invokeNativeOrFallback(
+    String methodName,
+    Map<String, dynamic> arguments,
+    Uint8List Function() fallback,
+    String successMessage,
+    String errorMessage,
+  ) async {
     try {
-      final result = await _channel.invokeMethod<Uint8List>('applyGrayscale', {
-        'imageData': imageData,
-      });
+      final result = await _channel.invokeMethod<Uint8List>(methodName, arguments);
       
       if (result != null) {
-        _logger.info('Grayscale filter applied successfully using native implementation');
+        _logger.info(successMessage);
         return result;
       }
       
       // Fallback to Dart implementation
-      return _applyGrayscaleDart(imageData);
+      return fallback();
     } catch (e) {
-      _logger.warning('Failed to apply grayscale filter using native implementation: $e');
-      return _applyGrayscaleDart(imageData);
+      _logger.warning('$errorMessage: $e');
+      return fallback();
     }
+  }
+
+  /// Helper to safely decode image data
+  static img.Image? _safeDecodeImage(Uint8List imageData) {
+    try {
+      return img.decodeImage(imageData);
+    } catch (e) {
+      _logger.warning('Failed to decode image: $e');
+      return null;
+    }
+  }
+
+  /// Applies grayscale filter to the provided image data
+  static Future<Uint8List> applyGrayscale(Uint8List imageData) async {
+    return _invokeNativeOrFallback(
+      'applyGrayscale',
+      {'imageData': imageData},
+      () => _applyGrayscaleDart(imageData),
+      'Grayscale filter applied successfully using native implementation',
+      'Failed to apply grayscale filter using native implementation',
+    );
   }
   
   /// Dart implementation of grayscale filter
   static Uint8List _applyGrayscaleDart(Uint8List imageData) {
     _logger.info('Using Dart implementation for grayscale filter');
-    final image = img.decodeImage(imageData);
+    final image = _safeDecodeImage(imageData);
     if (image == null) return imageData;
     
     final grayscale = img.grayscale(image);
@@ -58,29 +83,19 @@ class ImageFilters {
 
   /// Applies Gaussian blur with specified sigma value
   static Future<Uint8List> applyBlur(Uint8List imageData, double sigma) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>('applyBlur', {
-        'imageData': imageData,
-        'sigma': sigma,
-      });
-      
-      if (result != null) {
-        _logger.info('Blur filter applied successfully using native implementation');
-        return result;
-      }
-      
-      // Fallback to Dart implementation
-      return _applyBlurDart(imageData, sigma);
-    } catch (e) {
-      _logger.warning('Failed to apply blur filter using native implementation: $e');
-      return _applyBlurDart(imageData, sigma);
-    }
+    return _invokeNativeOrFallback(
+      'applyBlur',
+      {'imageData': imageData, 'sigma': sigma},
+      () => _applyBlurDart(imageData, sigma),
+      'Blur filter applied successfully using native implementation',
+      'Failed to apply blur filter using native implementation',
+    );
   }
   
   /// Dart implementation of blur filter
   static Uint8List _applyBlurDart(Uint8List imageData, double sigma) {
     _logger.info('Using Dart implementation for blur filter');
-    final image = img.decodeImage(imageData);
+    final image = _safeDecodeImage(imageData);
     if (image == null) return imageData;
     
     final blurred = img.gaussianBlur(image, radius: sigma.toInt());
@@ -92,32 +107,19 @@ class ImageFilters {
     Uint8List imageBytes,
     double factor,
   ) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>(
-        'adjustBrightness',
-        {
-          'imageBytes': imageBytes,
-          'factor': factor,
-        },
-      );
-      
-      if (result != null) {
-        _logger.info('Brightness adjusted successfully using native implementation');
-        return result;
-      }
-      
-      // Fallback to Dart implementation
-      return _adjustBrightnessDart(imageBytes, factor);
-    } catch (e) {
-      _logger.warning('Failed to adjust brightness using native implementation: $e');
-      return _adjustBrightnessDart(imageBytes, factor);
-    }
+    return _invokeNativeOrFallback(
+      'adjustBrightness',
+      {'imageBytes': imageBytes, 'factor': factor},
+      () => _adjustBrightnessDart(imageBytes, factor),
+      'Brightness adjusted successfully using native implementation',
+      'Failed to adjust brightness using native implementation',
+    );
   }
   
   /// Dart implementation of brightness adjustment
   static Uint8List _adjustBrightnessDart(Uint8List imageBytes, double factor) {
     _logger.info('Using Dart implementation for brightness adjustment');
-    final image = img.decodeImage(imageBytes);
+    final image = _safeDecodeImage(imageBytes);
     if (image == null) return imageBytes;
     
     // Convert factor to a range between -100 and 100 as expected by img.adjustColor
@@ -130,29 +132,19 @@ class ImageFilters {
   
   /// Applies sepia tone filter to the image
   static Future<Uint8List> applySepia(Uint8List imageBytes) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>(
-        'applySepia',
-        {'imageBytes': imageBytes},
-      );
-      
-      if (result != null) {
-        _logger.info('Sepia filter applied successfully using native implementation');
-        return result;
-      }
-      
-      // Fallback to Dart implementation
-      return _applySepiaFilter(imageBytes);
-    } catch (e) {
-      _logger.warning('Failed to apply sepia filter using native implementation: $e');
-      return _applySepiaFilter(imageBytes);
-    }
+    return _invokeNativeOrFallback(
+      'applySepia',
+      {'imageBytes': imageBytes},
+      () => _applySepiaFilter(imageBytes),
+      'Sepia filter applied successfully using native implementation',
+      'Failed to apply sepia filter using native implementation',
+    );
   }
   
   /// Dart implementation of sepia filter
   static Uint8List _applySepiaFilter(Uint8List imageBytes) {
     _logger.info('Using Dart implementation for sepia filter');
-    final image = img.decodeImage(imageBytes);
+    final image = _safeDecodeImage(imageBytes);
     if (image == null) return imageBytes;
     
     final sepia = img.sepia(image);
@@ -161,29 +153,19 @@ class ImageFilters {
   
   /// Inverts the colors of the image
   static Future<Uint8List> applyInvert(Uint8List imageBytes) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>(
-        'applyInvert',
-        {'imageBytes': imageBytes},
-      );
-      
-      if (result != null) {
-        _logger.info('Invert filter applied successfully using native implementation');
-        return result;
-      }
-      
-      // Fallback to Dart implementation
-      return _applyInvertFilter(imageBytes);
-    } catch (e) {
-      _logger.warning('Failed to apply invert filter using native implementation: $e');
-      return _applyInvertFilter(imageBytes);
-    }
+    return _invokeNativeOrFallback(
+      'applyInvert',
+      {'imageBytes': imageBytes},
+      () => _applyInvertFilter(imageBytes),
+      'Invert filter applied successfully using native implementation',
+      'Failed to apply invert filter using native implementation',
+    );
   }
   
   /// Dart implementation of invert filter
   static Uint8List _applyInvertFilter(Uint8List imageBytes) {
     _logger.info('Using Dart implementation for invert filter');
-    final image = img.decodeImage(imageBytes);
+    final image = _safeDecodeImage(imageBytes);
     if (image == null) return imageBytes;
     
     final inverted = img.invert(image);
@@ -195,27 +177,17 @@ class ImageFilters {
     Uint8List imageBytes,
     {double intensity = 0.5, double radius = 0.5}
   ) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>(
-        'applyVignette',
-        {
-          'imageBytes': imageBytes,
-          'intensity': intensity,
-          'radius': radius,
-        },
-      );
-      
-      if (result != null) {
-        _logger.info('Vignette filter applied successfully using native implementation');
-        return result;
-      }
-      
-      // Fallback to Dart implementation
-      return _applyVignetteDart(imageBytes, intensity, radius);
-    } catch (e) {
-      _logger.warning('Failed to apply vignette filter using native implementation: $e');
-      return _applyVignetteDart(imageBytes, intensity, radius);
-    }
+    return _invokeNativeOrFallback(
+      'applyVignette',
+      {
+        'imageBytes': imageBytes,
+        'intensity': intensity,
+        'radius': radius,
+      },
+      () => _applyVignetteDart(imageBytes, intensity, radius),
+      'Vignette filter applied successfully using native implementation',
+      'Failed to apply vignette filter using native implementation',
+    );
   }
   
   /// Dart implementation of vignette filter
@@ -225,7 +197,7 @@ class ImageFilters {
     double radius,
   ) {
     _logger.info('Using Dart implementation for vignette filter');
-    final image = img.decodeImage(imageBytes);
+    final image = _safeDecodeImage(imageBytes);
     if (image == null) return imageBytes;
     
     final width = image.width;
@@ -262,27 +234,17 @@ class ImageFilters {
     Uint8List imageBytes,
     {int radius = 5, double intensity = 0.5}
   ) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>(
-        'applyWatercolor',
-        {
-          'imageBytes': imageBytes,
-          'radius': radius,
-          'intensity': intensity,
-        },
-      );
-      
-      if (result != null) {
-        _logger.info('Watercolor filter applied successfully using native implementation');
-        return result;
-      }
-      
-      // Fallback to Dart implementation
-      return _applyWatercolorDart(imageBytes, radius, intensity);
-    } catch (e) {
-      _logger.warning('Failed to apply watercolor filter using native implementation: $e');
-      return _applyWatercolorDart(imageBytes, radius, intensity);
-    }
+    return _invokeNativeOrFallback(
+      'applyWatercolor',
+      {
+        'imageBytes': imageBytes,
+        'radius': radius,
+        'intensity': intensity,
+      },
+      () => _applyWatercolorDart(imageBytes, radius, intensity),
+      'Watercolor filter applied successfully using native implementation',
+      'Failed to apply watercolor filter using native implementation',
+    );
   }
   
   /// Dart implementation of watercolor filter
@@ -292,7 +254,7 @@ class ImageFilters {
     double intensity,
   ) {
     _logger.info('Using Dart implementation for watercolor filter');
-    final image = img.decodeImage(imageBytes);
+    final image = _safeDecodeImage(imageBytes);
     if (image == null) return imageBytes;
     
     // Apply blur for edge preservation instead of bilateral filter
@@ -313,27 +275,17 @@ class ImageFilters {
     Uint8List imageBytes,
     {int radius = 4, int levels = 20}
   ) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>(
-        'applyOilPainting',
-        {
-          'imageBytes': imageBytes,
-          'radius': radius,
-          'levels': levels,
-        },
-      );
-      
-      if (result != null) {
-        _logger.info('Oil painting filter applied successfully using native implementation');
-        return result;
-      }
-      
-      // Fallback to Dart implementation
-      return _applyOilPaintingDart(imageBytes, radius, levels);
-    } catch (e) {
-      _logger.warning('Failed to apply oil painting filter using native implementation: $e');
-      return _applyOilPaintingDart(imageBytes, radius, levels);
-    }
+    return _invokeNativeOrFallback(
+      'applyOilPainting',
+      {
+        'imageBytes': imageBytes,
+        'radius': radius,
+        'levels': levels,
+      },
+      () => _applyOilPaintingDart(imageBytes, radius, levels),
+      'Oil painting filter applied successfully using native implementation',
+      'Failed to apply oil painting filter using native implementation',
+    );
   }
   
   /// Dart implementation of oil painting filter
@@ -343,7 +295,7 @@ class ImageFilters {
     int levels,
   ) {
     _logger.info('Using Dart implementation for oil painting filter');
-    final image = img.decodeImage(imageBytes);
+    final image = _safeDecodeImage(imageBytes);
     if (image == null) return imageBytes;
     
     final width = image.width;
@@ -395,4 +347,5 @@ class ImageFilters {
     
     return Uint8List.fromList(img.encodeJpg(result));
   }
-} 
+}
+ 
