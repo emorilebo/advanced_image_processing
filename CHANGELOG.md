@@ -2,7 +2,15 @@
 
 All notable changes to the Advanced Image Processing Toolkit will be documented in this file.
 
-## [0.1.4] - 2025-01-20
+## [0.1.6] - 2025-12-17
+
+### Added
+- **Geometric Transformations**: Added `applyResize`, `applyRotate`, `applyCrop`, and `applyFlip`.
+- **Watermarking**: Added `applyWatermark` to overlay images.
+- **Color Adjustments**: Added `adjustContrast` and `adjustSaturation`.
+- **Documentation**: Added professional feature graphic and updated README with new examples.
+
+## [0.1.5] - 2025-XX-XX
 
 ### Changed
 - Updated documentation with improved structure and professional tone

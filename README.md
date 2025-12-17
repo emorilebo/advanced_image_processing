@@ -1,20 +1,21 @@
 # 🎨 Advanced Image Processing Toolkit
 
+![Advanced Image Processing Toolkit Features](doc/assets/feature_graphic.png)
+
 > **Transform images with AI-powered filters, object recognition, and augmented reality**
 
-A comprehensive Flutter package that brings professional-grade image processing capabilities to your mobile apps. Whether you're building a photo editor, AR app, or need intelligent image analysis, this toolkit provides everything you need in one powerful package.
+A comprehensive Flutter package that brings professional-grade image processing capabilities to your mobile apps.
 
 ## ✨ What Makes This Toolkit Special?
 
 This isn't just another image filter library. We've built a complete solution that combines:
 
 - **🎭 Rich Filter Library**: From classic effects to artistic transformations
+- **📐 Geometric Transformations**: Resize, rotate, crop, and flip images with ease
+- **💧 Smart Watermarking**: Protect your content with image and text watermarking
 - **🤖 AI-Powered Recognition**: Detect objects, faces, text, and poses in real-time
 - **🌐 Augmented Reality**: Place 3D models and create immersive AR experiences
 - **⚡ Performance Optimized**: Built for real-time processing on mobile devices
-- **🔧 Easy Integration**: Simple API, comprehensive documentation, and production-ready code
-
-Perfect for photo editing apps, AR experiences, accessibility features, or any app that needs intelligent image processing.
 
 ## 🚀 Quick Start
 
@@ -24,7 +25,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  advanced_image_processing_toolkit: ^0.1.3
+  advanced_image_processing_toolkit: ^0.1.6
 ```
 
 For AR features (optional), add:
@@ -53,20 +54,20 @@ await AdvancedImageProcessingToolkit.initialize(
 );
 ```
 
-## 🎨 Image Filters
+## 🎨 Image Filters & Transformations
 
-Transform your images with a wide range of professional filters.
+Transform your images with a wide range of professional tools.
 
 ### Basic Filters
 
 ```dart
 import 'package:advanced_image_processing_toolkit/src/filters.dart';
 
-// Grayscale - Classic black and white
-final grayscaleImage = await ImageFilters.applyGrayscale(imageBytes);
+// Grayscale
+final grayscale = await ImageFilters.applyGrayscale(imageBytes);
 
-// Blur - Soft focus effect
-final blurredImage = await ImageFilters.applyBlur(imageBytes, sigma: 5.0);
+// Blur
+final blurred = await ImageFilters.applyBlur(imageBytes, sigma: 5.0);
 
 // Brightness - Adjust image brightness
 final brightImage = await ImageFilters.adjustBrightness(imageBytes, factor: 0.5);
@@ -76,6 +77,58 @@ final sepiaImage = await ImageFilters.applySepia(imageBytes);
 
 // Invert - Negative effect
 final invertedImage = await ImageFilters.applyInvert(imageBytes);
+```
+
+### 📐 Geometric Transformations (New!)
+
+```dart
+// Resize
+final resized = await ImageFilters.applyResize(
+  imageBytes,
+  width: 800, // maintain aspect ratio if height is null
+);
+
+// Rotate (degrees)
+final rotated = await ImageFilters.applyRotate(imageBytes, 90.0);
+
+// Crop
+final cropped = await ImageFilters.applyCrop(
+  imageBytes, 
+  x: 100, 
+  y: 100, 
+  width: 400, 
+  height: 400
+);
+
+// Flip
+final flipped = await ImageFilters.applyFlip(
+  imageBytes, 
+  horizontal: true, 
+  vertical: false
+);
+```
+
+### 🎨 Color Adjustments (New!)
+
+```dart
+// Adjust Contrast (1.0 is default)
+final contrast = await ImageFilters.adjustContrast(imageBytes, 1.5);
+
+// Adjust Saturation (1.0 is default)
+final saturated = await ImageFilters.adjustSaturation(imageBytes, 1.2);
+```
+
+### 💧 Watermarking (New!)
+
+```dart
+// Apply Watermark
+final watermarked = await ImageFilters.applyWatermark(
+  imageBytes,
+  watermarkLogoBytes,
+  x: 50,
+  y: 50,
+  opacity: 0.5,
+);
 ```
 
 ### Advanced Artistic Filters

@@ -16,7 +16,7 @@ class AdvancedImageProcessingToolkitWeb extends AdvancedImageProcessingToolkitPl
   /// Returns a [String] containing the version of the platform.
   @override
   Future<String?> getPlatformVersion() async {
-    final version = kIsWeb ? 'Web' : 'Unknown';
+    const version = kIsWeb ? 'Web' : 'Unknown';
     return version;
   }
 } 

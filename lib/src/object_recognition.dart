@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
-import 'dart:typed_data';
 
 final _logger = Logger('ObjectRecognition');
 
@@ -99,7 +97,7 @@ class ObjectRecognition {
       final inputImage = InputImage.fromBytes(
         bytes: imageBytes,
         metadata: InputImageMetadata(
-          size: Size(0, 0), // Will be determined by the image
+          size: const Size(0, 0), // Will be determined by the image
           rotation: InputImageRotation.rotation0deg,
           format: InputImageFormat.bgra8888,
           bytesPerRow: 0, // Will be determined by the image
