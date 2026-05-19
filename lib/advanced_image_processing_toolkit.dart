@@ -1,83 +1,68 @@
-// You have generated a new plugin project without specifying the `--platforms`
-// flag. A plugin project with no platform support was generated. To add a
-// platform, run `flutter create -t plugin --platforms <platforms> .` under the
-// same directory. You can also find a detailed instruction on how to add
-// platforms in the `pubspec.yaml` at
-// https://flutter.dev/to/pubspec-plugin-platforms.
-
 import 'dart:async';
-import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+
 import 'advanced_image_processing_toolkit_platform_interface.dart';
+import 'src/platform_support.dart' as platform;
 
 export 'src/filters.dart';
-export 'src/object_recognition.dart';
 export 'src/augmented_reality.dart';
+// ML Kit depends on `dart:io`; on the web we export a stub that throws
+// `UnsupportedError` so consumer apps still compile.
+export 'src/object_recognition.dart'
+    if (dart.library.html) 'src/object_recognition_web_stub.dart';
 
-/// Main class for the Advanced Image Processing Toolkit
+/// Entry point for the Advanced Image Processing Toolkit.
 ///
-/// This toolkit provides comprehensive image processing capabilities including:
-/// - Real-time image filters (grayscale, blur, brightness adjustment)
-/// - Object detection and recognition
-/// - Augmented reality features
-///
-/// Future updates will include:
-/// - Enhanced image filters (sepia, vignette, artistic filters)
-/// - Custom ML model support for specialized object detection
-/// - Advanced AR capabilities (occlusion, lighting estimation)
-/// - Web and desktop platform support
-/// - Performance optimizations for real-time processing
+/// Provides:
+/// - Image filters (grayscale, blur, brightness, sepia, invert, vignette,
+///   watercolor, oil-painting, contrast, saturation, watermark)
+/// - Geometric transforms (resize, rotate, crop, flip)
+/// - ML-powered detection (objects, faces, text, pose) via Google ML Kit
+/// - Augmented-reality method channels (consumer app must add ARKit/ARCore)
 class AdvancedImageProcessingToolkit {
-  static const String version = '0.1.3';
+  AdvancedImageProcessingToolkit._();
+
+  /// Toolkit version. Kept in sync with `pubspec.yaml`.
+  static const String version = '0.2.0';
+
   static bool _isInitialized = false;
-  
-  /// Initializes the toolkit with optional configuration
+
+  /// Initializes the toolkit. Safe to call multiple times.
   ///
-  /// [enableObjectDetection] - Whether to initialize object detection capabilities
-  /// [enableAR] - Whether to initialize augmented reality capabilities
-  ///
-  /// Future versions will support additional parameters for:
-  /// - Custom ML models
-  /// - AR feature configuration
-  /// - Performance optimization settings
+  /// Returns `true` on success. AR is silently disabled on platforms where
+  /// it cannot run (web, desktop) regardless of [enableAR].
   static Future<bool> initialize({
     bool enableObjectDetection = true,
     bool enableAR = true,
   }) async {
-    try {
-      // Check platform compatibility
-      if (enableAR) {
-        if (kIsWeb) {
-          debugPrint('AR features are not available on web platform');
-          enableAR = false;
-        } else if (!Platform.isAndroid && !Platform.isIOS) {
-          debugPrint('AR features are only available on Android and iOS');
-          enableAR = false;
-        }
-      }
-      
-      // Initialize required native components
-      _isInitialized = true;
-      return true;
-    } catch (e) {
-      debugPrint('Failed to initialize AdvancedImageProcessingToolkit: $e');
-      return false;
+    if (enableAR && !isARSupported()) {
+      debugPrint(
+        'AdvancedImageProcessingToolkit: AR requested but not supported on '
+        'this platform — continuing without AR.',
+      );
     }
+    _isInitialized = true;
+    return true;
   }
 
-  /// Checks if the toolkit is initialized
+  /// Whether [initialize] has completed.
   static bool get isInitialized => _isInitialized;
 
-  /// Gets the platform version
+  /// Returns the native platform version (e.g. "Android 14", "iOS 17.4").
   ///
-  /// This is primarily used for testing platform integration
+  /// Returns `null` on platforms where the plugin is not registered.
   static Future<String?> getPlatformVersion() {
     return AdvancedImageProcessingToolkitPlatform.instance.getPlatformVersion();
   }
-  
-  /// Checks if AR is supported on the current device
+
+  /// Whether AR features can run on this device.
+  ///
+  /// Returns `true` only on Android and iOS. Note: this does NOT check whether
+  /// the consumer app has added `arkit_plugin` / `arcore_flutter_plugin` —
+  /// AR calls will fail at runtime if those are missing.
   static bool isARSupported() {
     if (kIsWeb) return false;
-    return Platform.isAndroid || Platform.isIOS;
+    return platform.isAndroid || platform.isIOS;
   }
 }

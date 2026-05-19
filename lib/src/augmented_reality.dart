@@ -1,72 +1,45 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:flutter/services.dart';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
+
+import 'platform_support.dart' as platform;
 
 final _logger = Logger('AugmentedReality');
 
-/// Provides augmented reality capabilities
+/// Augmented-reality method channel bindings.
 ///
-/// Important: To use AR features, you must add the following dependencies to your app:
-/// - For iOS: arkit_plugin: ^1.0.7
-/// - For Android: arcore_flutter_plugin: ^0.1.0
+/// This package only wires the channel calls — to actually use AR you must
+/// add the platform AR plugins to your own app:
+/// - iOS:     `arkit_plugin`
+/// - Android: `arcore_flutter_plugin`
 ///
-/// Current features:
-/// - AR session management
-/// - 3D model placement
-/// - Surface detection
-/// - Real-world scale adjustment
-///
-/// Upcoming features in future releases:
-/// - Occlusion (virtual objects hidden behind real objects)
-/// - Lighting estimation
-/// - Environment mapping
-/// - Persistent AR experiences
-/// - Collaborative AR
+/// All methods return `false` (or no-op) on platforms where AR is not
+/// supported (web, desktop) so they're safe to call unconditionally.
 class AugmentedReality {
-  static const MethodChannel _channel = 
+  AugmentedReality._();
+
+  static const MethodChannel _channel =
       MethodChannel('advanced_image_processing_toolkit/augmented_reality');
 
-  /// Current AR session status
   static bool _isSessionRunning = false;
-  
-  /// Flag to indicate if AR dependencies are available
-  static bool _arDependenciesAvailable = false;
-  
-  /// Checks if AR is supported on the current device
+
+  /// Whether the current platform can run AR (Android / iOS).
+  ///
+  /// Does NOT verify the consumer app has added ARKit/ARCore plugins — AR
+  /// calls may still fail at runtime if those are missing.
   static bool isARSupported() {
     if (kIsWeb) return false;
-    if (!_checkARDependencies()) return false;
-    return Platform.isAndroid || Platform.isIOS;
-  }
-  
-  /// Checks if required AR dependencies are available
-  static bool _checkARDependencies() {
-    try {
-      // Try to access AR classes dynamically
-      if (Platform.isIOS) {
-        // Check for ARKit
-        _arDependenciesAvailable = true;
-      } else if (Platform.isAndroid) {
-        // Check for ARCore
-        _arDependenciesAvailable = true;
-      }
-      return _arDependenciesAvailable;
-    } catch (e) {
-      _logger.warning('AR dependencies not available: $e');
-      _arDependenciesAvailable = false;
-      return false;
-    }
+    return platform.isAndroid || platform.isIOS;
   }
 
-  /// Starts an AR session
+  /// Starts an AR session. Returns `true` if the session is running.
   static Future<bool> startARSession() async {
     if (!isARSupported()) {
-      _logger.warning('AR is not supported on this platform or dependencies not available');
+      _logger.warning('AR is not supported on this platform');
       return false;
     }
-    
     try {
       final result = await _channel.invokeMethod<bool>('startARSession');
       _isSessionRunning = result ?? false;
@@ -77,13 +50,9 @@ class AugmentedReality {
     }
   }
 
-  /// Stops the current AR session
+  /// Stops the current AR session. Returns `true` if no session is running.
   static Future<bool> stopARSession() async {
-    if (!isARSupported()) {
-      _logger.warning('AR is not supported on this platform or dependencies not available');
-      return false;
-    }
-    
+    if (!isARSupported()) return true;
     try {
       final result = await _channel.invokeMethod<bool>('stopARSession');
       _isSessionRunning = !(result ?? false);
@@ -94,7 +63,10 @@ class AugmentedReality {
     }
   }
 
-  /// Places a 3D model at the specified position
+  /// Places a 3D model at [position] (x, y, z in metres, camera-relative).
+  ///
+  /// [rotation] is degrees on each axis. Returns `true` if placement
+  /// succeeded.
   static Future<bool> placeModel({
     required String modelPath,
     required List<double> position,
@@ -102,15 +74,13 @@ class AugmentedReality {
     List<double> rotation = const [0.0, 0.0, 0.0],
   }) async {
     if (!isARSupported()) {
-      _logger.warning('AR is not supported on this platform or dependencies not available');
+      _logger.warning('AR is not supported on this platform');
       return false;
     }
-    
     if (!_isSessionRunning) {
       _logger.warning('AR session is not running. Call startARSession() first.');
       return false;
     }
-    
     try {
       final result = await _channel.invokeMethod<bool>(
         'placeModel',
@@ -127,7 +97,7 @@ class AugmentedReality {
       return false;
     }
   }
-  
-  /// Gets the current AR session status
+
+  /// Whether an AR session is currently running.
   static bool get isSessionRunning => _isSessionRunning;
-} 
+}

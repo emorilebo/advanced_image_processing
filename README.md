@@ -1,467 +1,228 @@
-# 🎨 Advanced Image Processing Toolkit
+# Advanced Image Processing Toolkit
 
 ![Advanced Image Processing Toolkit Features](doc/assets/feature_graphic.png)
 
-> **Transform images with AI-powered filters, object recognition, and augmented reality**
+> **Filters, geometric transforms, watermarking, ML-powered detection, and AR hooks for Flutter.**
 
-A comprehensive Flutter package that brings professional-grade image processing capabilities to your mobile apps.
+A Flutter package that combines:
 
-## ✨ What Makes This Toolkit Special?
+- **Filters** — grayscale, blur, brightness, sepia, invert, vignette,
+  watercolor, oil-painting, contrast, saturation
+- **Geometric transforms** — resize, rotate, crop, flip
+- **Watermarking** — image overlay compositing
+- **ML detection** — objects, faces, text (OCR), human pose via Google ML Kit
+- **Augmented reality** — method-channel bindings (BYO ARKit/ARCore plugins)
 
-This isn't just another image filter library. We've built a complete solution that combines:
-
-- **🎭 Rich Filter Library**: From classic effects to artistic transformations
-- **📐 Geometric Transformations**: Resize, rotate, crop, and flip images with ease
-- **💧 Smart Watermarking**: Protect your content with image and text watermarking
-- **🤖 AI-Powered Recognition**: Detect objects, faces, text, and poses in real-time
-- **🌐 Augmented Reality**: Place 3D models and create immersive AR experiences
-- **⚡ Performance Optimized**: Built for real-time processing on mobile devices
-
-## 🚀 Quick Start
-
-### Installation
-
-Add the package to your `pubspec.yaml`:
+## Installation
 
 ```yaml
 dependencies:
-  advanced_image_processing_toolkit: ^0.1.6
+  advanced_image_processing_toolkit: ^0.2.0
 ```
 
-For AR features (optional), add:
+Filters and transforms run on Android, iOS, and Web. ML Kit detection requires
+Android or iOS (Google ML Kit is mobile-only).
+
+### Optional: AR support
+
+AR is **not** bundled — it would balloon the install for every consumer. To
+use `AugmentedReality.*`, add the platform AR plugins yourself:
 
 ```yaml
 dependencies:
-  arkit_plugin: ^1.0.7      # iOS AR
-  arcore_flutter_plugin: ^0.1.0  # Android AR
+  arkit_plugin: ^1.1.0          # iOS
+  arcore_flutter_plugin: ^0.1.0 # Android (community-maintained)
 ```
 
-Then run:
-
-```bash
-flutter pub get
-```
-
-### Initialize the Toolkit
+## Quick start
 
 ```dart
 import 'package:advanced_image_processing_toolkit/advanced_image_processing_toolkit.dart';
 
-// Initialize with desired features
 await AdvancedImageProcessingToolkit.initialize(
-  enableObjectDetection: true,  // Enable AI object recognition
-  enableAR: true,               // Enable AR capabilities
+  enableObjectDetection: true,
+  enableAR: false,
 );
 ```
 
-## 🎨 Image Filters & Transformations
+## Filters
 
-Transform your images with a wide range of professional tools.
-
-### Basic Filters
+All filter methods are **static** on `ImageFilters`, take a `Uint8List`, and
+return a `Future<Uint8List>`.
 
 ```dart
-import 'package:advanced_image_processing_toolkit/src/filters.dart';
+// Basic
+final gray   = await ImageFilters.applyGrayscale(bytes);
+final blur   = await ImageFilters.applyBlur(bytes, 5.0);        // sigma
+final sepia  = await ImageFilters.applySepia(bytes);
+final invert = await ImageFilters.applyInvert(bytes);
 
-// Grayscale
-final grayscale = await ImageFilters.applyGrayscale(imageBytes);
+// Brightness (delta, -1.0 .. 1.0)
+final brighter = await ImageFilters.adjustBrightness(bytes, 0.5);
+final darker   = await ImageFilters.adjustBrightness(bytes, -0.5);
 
-// Blur
-final blurred = await ImageFilters.applyBlur(imageBytes, sigma: 5.0);
-
-// Brightness - Adjust image brightness
-final brightImage = await ImageFilters.adjustBrightness(imageBytes, factor: 0.5);
-
-// Sepia - Vintage warm tone
-final sepiaImage = await ImageFilters.applySepia(imageBytes);
-
-// Invert - Negative effect
-final invertedImage = await ImageFilters.applyInvert(imageBytes);
+// Contrast / saturation (multiplier, 1.0 is neutral)
+final contrasty = await ImageFilters.adjustContrast(bytes, 1.5);
+final vivid     = await ImageFilters.adjustSaturation(bytes, 1.2);
 ```
 
-### 📐 Geometric Transformations (New!)
+### Artistic effects
 
 ```dart
-// Resize
-final resized = await ImageFilters.applyResize(
-  imageBytes,
-  width: 800, // maintain aspect ratio if height is null
+final vignette = await ImageFilters.applyVignette(
+  bytes,
+  intensity: 0.5,  // 0..1
+  radius: 0.5,     // 0..1
 );
 
-// Rotate (degrees)
-final rotated = await ImageFilters.applyRotate(imageBytes, 90.0);
-
-// Crop
-final cropped = await ImageFilters.applyCrop(
-  imageBytes, 
-  x: 100, 
-  y: 100, 
-  width: 400, 
-  height: 400
+final watercolor = await ImageFilters.applyWatercolor(
+  bytes,
+  radius: 5,       // blur radius
+  intensity: 0.6,
 );
 
-// Flip
-final flipped = await ImageFilters.applyFlip(
-  imageBytes, 
-  horizontal: true, 
-  vertical: false
+final oil = await ImageFilters.applyOilPainting(
+  bytes,
+  radius: 4,       // brush size
+  levels: 20,      // colour quantisation
 );
 ```
 
-### 🎨 Color Adjustments (New!)
+### Geometric transforms
 
 ```dart
-// Adjust Contrast (1.0 is default)
-final contrast = await ImageFilters.adjustContrast(imageBytes, 1.5);
-
-// Adjust Saturation (1.0 is default)
-final saturated = await ImageFilters.adjustSaturation(imageBytes, 1.2);
+final resized = await ImageFilters.applyResize(bytes, width: 800); // height auto
+final rotated = await ImageFilters.applyRotate(bytes, 90.0);
+final cropped = await ImageFilters.applyCrop(bytes, 100, 100, 400, 400);
+final flipped = await ImageFilters.applyFlip(bytes, horizontal: true);
 ```
 
-### 💧 Watermarking (New!)
+### Watermarking
 
 ```dart
-// Apply Watermark
 final watermarked = await ImageFilters.applyWatermark(
-  imageBytes,
-  watermarkLogoBytes,
+  baseBytes,
+  logoBytes,
   x: 50,
   y: 50,
   opacity: 0.5,
 );
 ```
 
-### Advanced Artistic Filters
+### Filter chains
+
+Filters compose by simply passing the output of one into the next:
 
 ```dart
-// Vignette - Darken edges for dramatic effect
-final vignetteImage = await ImageFilters.applyVignette(
-  imageBytes,
-  intensity: 0.5,  // 0.0 to 1.0
-  radius: 0.5,     // 0.0 to 1.0
-);
-
-// Watercolor - Artistic watercolor painting effect
-final watercolorImage = await ImageFilters.applyWatercolor(
-  imageBytes,
-  radius: 5,       // Blur radius
-  intensity: 0.5,  // Effect intensity
-);
-
-// Oil Painting - Classic oil painting effect
-final oilPaintingImage = await ImageFilters.applyOilPainting(
-  imageBytes,
-  radius: 4,       // Brush size
-  levels: 20,      // Color quantization levels
-);
+var out = await ImageFilters.applyGrayscale(bytes);
+out     = await ImageFilters.adjustContrast(out, 1.2);
+out     = await ImageFilters.applyVignette(out, intensity: 0.3);
 ```
 
-### Filter Chains
+## ML Kit detection
 
-Combine multiple filters for unique effects:
-
-```dart
-// Apply multiple filters in sequence
-var processed = await ImageFilters.applyGrayscale(imageBytes);
-processed = await ImageFilters.adjustBrightness(processed, factor: 1.2);
-processed = await ImageFilters.applyVignette(processed, intensity: 0.3);
-```
-
-## 🤖 Object Recognition
-
-Leverage Google ML Kit's powerful AI to detect and analyze objects in images.
-
-### Object Detection
+`ObjectRecognition.detectObjectsFromPath` runs **object detection, face
+detection, pose estimation, and text recognition** in parallel and returns
+a unified list of `DetectedObject`. Filter by `label` to slice the kind of
+detection you want.
 
 ```dart
-import 'package:advanced_image_processing_toolkit/src/object_recognition.dart';
+final detections =
+    await ObjectRecognition.detectObjectsFromPath('/path/to/photo.jpg');
 
-// Detect objects in image
-final detections = await ObjectRecognition.detectObjects(imageBytes);
-
-// Process results
-for (final detection in detections) {
-  print('Found: ${detection.label}');
-  print('Confidence: ${detection.confidence}%');
-  print('Location: ${detection.boundingBox}');
-  
-  // Access additional metadata
-  if (detection.additionalData != null) {
-    print('Details: ${detection.additionalData}');
+for (final d in detections) {
+  switch (d.label) {
+    case 'Face':
+      final smiling = d.additionalData?['smilingProbability'] as double?;
+      print('Face (smile=$smiling) at ${d.boundingBox}');
+    case 'Text':
+      print('OCR: ${d.additionalData?['text']}');
+    case 'Person':
+      print('Pose with ${(d.additionalData?['landmarks'] as List).length} landmarks');
+    default:
+      print('${d.label} (${(d.confidence * 100).toStringAsFixed(0)}%) at ${d.boundingBox}');
   }
 }
 ```
 
-### Visualize Detections
+ML Kit requires a file path or accurate `InputImageMetadata`. If you have
+raw bytes and you know the image's width/height/stride/format:
 
 ```dart
-// Draw bounding boxes on image
-final annotatedImage = await ObjectRecognition.drawDetections(
-  imageBytes,
-  detections,
-  boxColor: Colors.red,
-  labelColor: Colors.white,
+final detections = await ObjectRecognition.detectObjectsFromBytes(
+  bytes,
+  InputImageMetadata(
+    size: Size(width.toDouble(), height.toDouble()),
+    rotation: InputImageRotation.rotation0deg,
+    format: InputImageFormat.bgra8888,
+    bytesPerRow: width * 4,
+  ),
 );
 ```
 
-### Face Detection
+Call `ObjectRecognition.dispose()` when your app is shutting down to release
+the underlying ML Kit detectors.
+
+## Augmented reality
 
 ```dart
-// Detect faces with landmarks
-final faceDetections = await ObjectRecognition.detectFaces(imageBytes);
-
-for (final face in faceDetections) {
-  print('Face detected at: ${face.boundingBox}');
-  // Access facial landmarks, expressions, etc.
-}
-```
-
-### Text Recognition (OCR)
-
-```dart
-// Extract text from images
-final textDetections = await ObjectRecognition.recognizeText(imageBytes);
-
-for (final textBlock in textDetections) {
-  print('Text: ${textBlock.text}');
-  print('Confidence: ${textBlock.confidence}');
-  print('Language: ${textBlock.language}');
-}
-```
-
-### Pose Estimation
-
-```dart
-// Detect human poses
-final poseDetections = await ObjectRecognition.detectPoses(imageBytes);
-
-for (final pose in poseDetections) {
-  // Access body landmarks (shoulders, elbows, knees, etc.)
-  final landmarks = pose.landmarks;
-  // Use for fitness apps, motion tracking, etc.
-}
-```
-
-## 🌐 Augmented Reality
-
-Create immersive AR experiences with 3D model placement and surface detection.
-
-### Basic AR Setup
-
-```dart
-import 'package:advanced_image_processing_toolkit/src/augmented_reality.dart';
-
-// Check if AR is supported on device
 if (AugmentedReality.isARSupported()) {
-  // Start AR session
   await AugmentedReality.startARSession();
-  
-  // Place 3D model in AR space
   await AugmentedReality.placeModel(
     modelPath: 'assets/models/chair.glb',
-    position: [0, 0, -1],  // x, y, z coordinates
+    position: [0, 0, -1],   // x, y, z
     scale: 1.0,
-    rotation: [0, 0, 0],   // x, y, z rotation
+    rotation: [0, 0, 0],
   );
-  
-  // Stop AR session when done
+  // ...
   await AugmentedReality.stopARSession();
 }
 ```
 
-### Surface Detection
+`isARSupported()` only checks the OS — it does not verify the consumer app
+has actually added `arkit_plugin` / `arcore_flutter_plugin`. AR calls return
+`false` and log a warning if the channel isn't wired.
+
+## Platform support
+
+| Platform | Filters & transforms | ML detection | AR |
+| --- | --- | --- | --- |
+| Android | Yes | Yes | Yes (with ARCore plugin) |
+| iOS | Yes | Yes | Yes (with ARKit plugin) |
+| Web | Yes | No (throws `UnsupportedError`) | No |
+| Desktop | Yes | No | No |
+
+## Performance tips
+
+Run heavy filters off the UI thread with `compute`:
 
 ```dart
-// Detect horizontal surfaces (tables, floors, etc.)
-final surfaces = await AugmentedReality.detectSurfaces();
-
-for (final surface in surfaces) {
-  print('Surface detected at: ${surface.position}');
-  print('Size: ${surface.size}');
-  
-  // Place objects on detected surfaces
-  await AugmentedReality.placeModel(
-    modelPath: 'assets/models/object.glb',
-    position: surface.position,
-  );
-}
+final out = await compute(_grayscale, bytes);
+Uint8List _grayscale(Uint8List b) =>
+    /* call ImageFilters.applyGrayscale here */;
 ```
 
-## 💡 Real-World Use Cases
-
-### Photo Editing App
+Resize first, then process — Gaussian blur and oil-painting are quadratic in
+pixel count:
 
 ```dart
-// User selects filter
-final filteredImage = await ImageFilters.applySepia(userImage);
-
-// Apply additional effects
-final finalImage = await ImageFilters.applyVignette(
-  filteredImage,
-  intensity: 0.3,
-);
+final small = await ImageFilters.applyResize(huge, width: 1920);
+final out   = await ImageFilters.applyBlur(small, 5);
 ```
 
-### Accessibility App
+## API reference
 
-```dart
-// Extract text from images for visually impaired users
-final text = await ObjectRecognition.recognizeText(imageBytes);
-speakText(text); // Text-to-speech
-```
+See [API_REFERENCE.md](API_REFERENCE.md).
 
-### E-commerce AR
+## Author
 
-```dart
-// Let users visualize products in their space
-await AugmentedReality.placeModel(
-  modelPath: 'assets/products/sofa.glb',
-  position: [0, 0, -2],
-  scale: 1.0,
-);
-```
+**Godfrey Lebo** — Fullstack Developer & Technical PM
 
-### Fitness App
+- Email: [emorylebo@gmail.com](mailto:emorylebo@gmail.com)
+- LinkedIn: [godfreylebo](https://www.linkedin.com/in/godfreylebo/)
+- Portfolio: [godfreylebo.dev](https://www.godfreylebo.dev/)
+- GitHub: [@emorilebo](https://github.com/emorilebo)
 
-```dart
-// Track user's pose during exercises
-final poses = await ObjectRecognition.detectPoses(cameraFrame);
-analyzeExerciseForm(poses);
-```
+## License
 
-## 📱 Platform Support
-
-| Platform | Filters | Object Recognition | AR |
-|----------|---------|-------------------|-----|
-| Android  | ✅      | ✅                | ✅  |
-| iOS      | ✅      | ✅                | ✅  |
-| Web      | ✅      | ⚠️ Limited        | ❌  |
-| macOS    | ✅      | ⚠️ Limited        | ❌  |
-| Windows  | ✅      | ⚠️ Limited        | ❌  |
-| Linux    | ✅      | ⚠️ Limited        | ❌  |
-
-## 🔧 Configuration & Dependencies
-
-### Required Dependencies
-
-- Flutter SDK: >=3.3.0
-- Dart SDK: >=3.0.0
-
-### Core Dependencies
-
-- `image: ^4.5.4` - Image processing
-- `camera: ^0.11.3` - Camera access
-- `google_ml_kit: ^0.16.2` - ML Kit integration
-- `image_picker: ^1.0.7` - Image selection
-- `permission_handler: ^11.3.0` - Permissions
-
-### ML Kit Dependencies
-
-- `google_mlkit_text_recognition: ^0.10.0`
-- `google_mlkit_face_detection: ^0.8.0`
-- `google_mlkit_pose_detection: ^0.9.0`
-
-### Optional AR Dependencies
-
-- `arkit_plugin: ^1.0.7` (iOS)
-- `arcore_flutter_plugin: ^0.1.0` (Android)
-
-## ⚡ Performance Tips
-
-1. **Process Images in Background**
-   ```dart
-   final processed = await compute(ImageFilters.applyGrayscale, imageBytes);
-   ```
-
-2. **Cache Processed Images**
-   ```dart
-   final cacheKey = 'filtered_${imageHash}_sepia';
-   if (cache.containsKey(cacheKey)) {
-     return cache[cacheKey];
-   }
-   ```
-
-3. **Resize Before Processing**
-   ```dart
-   final resized = await resizeImage(imageBytes, maxWidth: 1920);
-   final processed = await ImageFilters.applyBlur(resized);
-   ```
-
-4. **Use Isolates for Heavy Processing**
-   ```dart
-   final result = await Isolate.run(() => 
-     ImageFilters.applyOilPainting(largeImage)
-   );
-   ```
-
-## 🐛 Troubleshooting
-
-### Filters Not Working
-
-- ✅ Ensure image format is supported (JPEG, PNG)
-- ✅ Check image file size (very large images may cause memory issues)
-- ✅ Verify image bytes are valid
-
-### Object Recognition Fails
-
-- ✅ Check camera permissions
-- ✅ Ensure Google Play Services (Android) or ML Kit is available
-- ✅ Verify image quality (blurry images reduce accuracy)
-
-### AR Not Working
-
-- ✅ Check device AR support: `AugmentedReality.isARSupported()`
-- ✅ Verify AR dependencies are added
-- ✅ Ensure proper permissions (camera, location for AR)
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-flutter test
-
-# Run specific test suite
-flutter test test/filters_test.dart
-flutter test test/object_recognition_test.dart
-```
-
-## 📚 API Reference
-
-For detailed API documentation, see [API_REFERENCE.md](API_REFERENCE.md).
-
-## 👨‍💻 Author
-
-**Godfrey Lebo** - Fullstack Developer & Technical PM
-
-> With **9+ years of industry experience**, I specialize in building AI-powered applications, scalable mobile solutions, and secure backend systems. I've led teams delivering marketplaces, fintech platforms, and AI applications serving thousands of users.
-
-- 📧 **Email**: [emorylebo@gmail.com](mailto:emorylebo@gmail.com)
-- 💼 **LinkedIn**: [godfreylebo](https://www.linkedin.com/in/godfreylebo/)
-- 🌐 **Portfolio**: [godfreylebo.dev](https://www.godfreylebo.dev/)
-- 🐙 **GitHub**: [@emorilebo](https://github.com/emorilebo)
-
-## 🤝 Contributing
-
-We welcome contributions! Whether you're fixing bugs, adding features, or improving documentation, your help makes this toolkit better for everyone.
-
-**Ways to contribute:**
-- 🐛 Report bugs
-- 💡 Suggest new features
-- 📝 Improve documentation
-- 🔧 Submit pull requests
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Google ML Kit for powerful AI capabilities
-- Flutter team for the amazing framework
-- Community contributors and users
-
----
-
-**Made with ❤️ by [Godfrey Lebo](https://www.godfreylebo.dev/)**
-
-If this toolkit helps build your app, consider giving it a ⭐ on GitHub!
+MIT — see [LICENSE](LICENSE).

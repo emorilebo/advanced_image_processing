@@ -1,38 +1,53 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
+import 'dart:io' show File;
+import 'dart:ui' show Rect;
+
+import 'package:flutter/foundation.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
+import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:logging/logging.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
 
 final _logger = Logger('ObjectRecognition');
 
-/// Represents a detected object in an image
+/// A single detection produced by [ObjectRecognition.detectObjects].
+@immutable
 class DetectedObject {
-  final String label;
-  final double confidence;
-  final Rect boundingBox;
-  final Map<String, dynamic>? additionalData;
-
-  DetectedObject({
+  const DetectedObject({
     required this.label,
     required this.confidence,
     required this.boundingBox,
     this.additionalData,
   });
 
+  /// Display label (e.g. "Face", "Text", an object category, "Person").
+  final String label;
+
+  /// Confidence score in `[0.0, 1.0]`.
+  final double confidence;
+
+  /// Bounding box in the source image's pixel coordinates.
+  final Rect boundingBox;
+
+  /// Detector-specific extra data (landmarks, recognised text, …).
+  final Map<String, dynamic>? additionalData;
+
   factory DetectedObject.fromMap(Map<dynamic, dynamic> map) {
     return DetectedObject(
       label: map['label'] as String,
-      confidence: map['confidence'] as double,
+      confidence: (map['confidence'] as num).toDouble(),
       boundingBox: Rect.fromLTWH(
-        map['left'] as double,
-        map['top'] as double,
-        map['width'] as double,
-        map['height'] as double,
+        (map['left'] as num).toDouble(),
+        (map['top'] as num).toDouble(),
+        (map['width'] as num).toDouble(),
+        (map['height'] as num).toDouble(),
       ),
-      additionalData: map['additionalData'] as Map<String, dynamic>?,
+      additionalData:
+          (map['additionalData'] as Map?)?.cast<String, dynamic>(),
     );
   }
-  
+
   Map<String, dynamic> toMap() {
     return {
       'label': label,
@@ -46,33 +61,23 @@ class DetectedObject {
   }
 }
 
-/// Provides object detection and recognition capabilities
+/// ML Kit-powered detection of objects, faces, text, and human pose.
 ///
-/// Current features:
-/// - Real-time object detection
-/// - Multiple object recognition
-/// - Confidence scoring
-/// - Bounding box calculation
-///
-/// Upcoming features in future releases:
-/// - Custom ML model support
-/// - Specialized detection models for specific industries
-/// - Face detection and analysis
-/// - Text recognition (OCR)
-/// - Pose estimation
+/// Call [dispose] when the app is shutting down to release native ML Kit
+/// resources.
 class ObjectRecognition {
-  static const MethodChannel _channel = 
-      MethodChannel('advanced_image_processing_toolkit/object_recognition');
-      
-  static final _objectDetector = GoogleMlKit.vision.objectDetector(
+  ObjectRecognition._();
+
+  static final _objectDetector = ObjectDetector(
     options: ObjectDetectorOptions(
-      mode: DetectionMode.stream,
+      mode: DetectionMode.single,
       classifyObjects: true,
       multipleObjects: true,
     ),
   );
-  
+
   static final _textRecognizer = TextRecognizer();
+
   static final _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
       enableLandmarks: true,
@@ -81,53 +86,70 @@ class ObjectRecognition {
       minFaceSize: 0.15,
     ),
   );
-  
+
   static final _poseDetector = PoseDetector(
     options: PoseDetectorOptions(
-      mode: PoseDetectionMode.stream,
+      mode: PoseDetectionMode.single,
       model: PoseDetectionModel.base,
     ),
   );
 
-  /// Detects objects in the given image
-  static Future<List<DetectedObject>> detectObjects(
-    Uint8List imageBytes,
+  /// Detects objects, faces, text, and pose in [imagePath].
+  ///
+  /// ML Kit's `InputImage.fromBytes` requires you to know the image's exact
+  /// width/height/stride/format upfront, so the safe, portable entry-point
+  /// takes a **file path**. Use [detectObjectsFromBytes] if you have raw
+  /// bytes and you know the metadata.
+  static Future<List<DetectedObject>> detectObjectsFromPath(
+    String imagePath,
   ) async {
+    final inputImage = InputImage.fromFile(File(imagePath));
+    return _runAllDetectors(inputImage);
+  }
+
+  /// Detects objects, faces, text, and pose in raw image bytes.
+  ///
+  /// You MUST provide accurate [metadata] — ML Kit cannot infer width,
+  /// height, or stride from the byte buffer alone.
+  static Future<List<DetectedObject>> detectObjectsFromBytes(
+    Uint8List bytes,
+    InputImageMetadata metadata,
+  ) async {
+    final inputImage = InputImage.fromBytes(bytes: bytes, metadata: metadata);
+    return _runAllDetectors(inputImage);
+  }
+
+  /// Convenience alias for [detectObjectsFromPath] (back-compat).
+  static Future<List<DetectedObject>> detectObjects(String imagePath) =>
+      detectObjectsFromPath(imagePath);
+
+  static Future<List<DetectedObject>> _runAllDetectors(
+    InputImage inputImage,
+  ) async {
+    final detections = <DetectedObject>[];
+
     try {
-      final inputImage = InputImage.fromBytes(
-        bytes: imageBytes,
-        metadata: InputImageMetadata(
-          size: const Size(0, 0), // Will be determined by the image
-          rotation: InputImageRotation.rotation0deg,
-          format: InputImageFormat.bgra8888,
-          bytesPerRow: 0, // Will be determined by the image
-        ),
-      );
-      
       final objects = await _objectDetector.processImage(inputImage);
-      final faces = await _faceDetector.processImage(inputImage);
-      final poses = await _poseDetector.processImage(inputImage);
-      final text = await _textRecognizer.processImage(inputImage);
-      
-      final List<DetectedObject> detections = [];
-      
-      // Process general objects
       for (final object in objects) {
+        final firstLabel = object.labels.isNotEmpty ? object.labels.first : null;
         detections.add(DetectedObject(
-          label: object.labels.first.text,
-          confidence: object.labels.first.confidence,
+          label: firstLabel?.text ?? 'Object',
+          confidence: firstLabel?.confidence ?? 0.0,
           boundingBox: object.boundingBox,
           additionalData: {
             'trackingId': object.trackingId,
-            'labels': object.labels.map((l) => {
-              'text': l.text,
-              'confidence': l.confidence,
-            }).toList(),
+            'labels': object.labels
+                .map((l) => {'text': l.text, 'confidence': l.confidence})
+                .toList(),
           },
         ));
       }
-      
-      // Process faces
+    } catch (e) {
+      _logger.warning('Object detector failed: $e');
+    }
+
+    try {
+      final faces = await _faceDetector.processImage(inputImage);
       for (final face in faces) {
         detections.add(DetectedObject(
           label: 'Face',
@@ -139,35 +161,39 @@ class ObjectRecognition {
             'rightEyeOpenProbability': face.rightEyeOpenProbability,
             'headEulerAngleY': face.headEulerAngleY,
             'headEulerAngleZ': face.headEulerAngleZ,
-            'hasLandmarks': face.landmarks.isNotEmpty,
             'landmarkCount': face.landmarks.length,
           },
         ));
       }
-      
-      // Process poses
+    } catch (e) {
+      _logger.warning('Face detector failed: $e');
+    }
+
+    try {
+      final poses = await _poseDetector.processImage(inputImage);
       for (final pose in poses) {
-        // Create a bounding box based on pose landmarks
-        Rect poseBoundingBox = _calculatePoseBoundingBox(pose);
-        
         detections.add(DetectedObject(
           label: 'Person',
           confidence: 0.9,
-          boundingBox: poseBoundingBox,
+          boundingBox: _calculatePoseBoundingBox(pose),
           additionalData: {
-            'landmarks': pose.landmarks.entries.map((entry) => {
-              'type': entry.key.toString(),
-              'position': {
-                'x': entry.value.x,
-                'y': entry.value.y
-              },
-              'inFrameLikelihood': entry.value.likelihood,
-            }).toList(),
+            'landmarks': pose.landmarks.entries
+                .map((e) => {
+                      'type': e.key.toString(),
+                      'x': e.value.x,
+                      'y': e.value.y,
+                      'likelihood': e.value.likelihood,
+                    })
+                .toList(),
           },
         ));
       }
-      
-      // Process text
+    } catch (e) {
+      _logger.warning('Pose detector failed: $e');
+    }
+
+    try {
+      final text = await _textRecognizer.processImage(inputImage);
       for (final block in text.blocks) {
         detections.add(DetectedObject(
           label: 'Text',
@@ -179,79 +205,39 @@ class ObjectRecognition {
           },
         ));
       }
-      
-      _logger.info('Detected ${detections.length} objects using ML Kit');
-      return detections;
     } catch (e) {
-      _logger.warning('Failed to detect objects using ML Kit: $e');
-      return [];
+      _logger.warning('Text recognizer failed: $e');
     }
-  }
-  
-  /// Draws bounding boxes around detected objects on the image
-  static Future<Uint8List> drawDetections(
-    Uint8List imageBytes,
-    List<DetectedObject> detections,
-  ) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>(
-        'drawDetections',
-        {
-          'imageBytes': imageBytes,
-          'detections': detections.map((d) => d.toMap()).toList(),
-        },
-      );
-      
-      if (result != null) {
-        _logger.info('Detections drawn successfully using native implementation');
-        return result;
-      }
-      
-      // For now, just return the original image
-      // In a future update, we'll implement drawing in Dart
-      return imageBytes;
-    } catch (e) {
-      _logger.warning('Failed to draw detections: $e');
-      return imageBytes;
-    }
-  }
-  
-  /// Disposes of ML Kit resources
-  static Future<void> dispose() async {
-    await _objectDetector.close();
-    await _textRecognizer.close();
-    await _faceDetector.close();
-    await _poseDetector.close();
+
+    _logger.info('Detected ${detections.length} regions');
+    return detections;
   }
 
-  /// Calculates a bounding box from pose landmarks
+  /// Releases ML Kit resources. Safe to call multiple times.
+  static Future<void> dispose() async {
+    await Future.wait([
+      _objectDetector.close(),
+      _textRecognizer.close(),
+      _faceDetector.close(),
+      _poseDetector.close(),
+    ]);
+  }
+
   static Rect _calculatePoseBoundingBox(Pose pose) {
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = -double.infinity;
-    double maxY = -double.infinity;
-    
-    // Check if there are any landmarks
     if (pose.landmarks.isEmpty) {
-      return const Rect.fromLTWH(0, 0, 100, 200); // Default if no landmarks
+      return const Rect.fromLTWH(0, 0, 0, 0);
     }
-    
-    // Find min and max coordinates
+    var minX = double.infinity;
+    var minY = double.infinity;
+    var maxX = -double.infinity;
+    var maxY = -double.infinity;
+
     for (final landmark in pose.landmarks.values) {
       if (landmark.x < minX) minX = landmark.x;
       if (landmark.y < minY) minY = landmark.y;
       if (landmark.x > maxX) maxX = landmark.x;
       if (landmark.y > maxY) maxY = landmark.y;
     }
-    
-    // Calculate width and height
-    double width = maxX - minX;
-    double height = maxY - minY;
-    
-    // Ensure minimum size
-    width = width < 50 ? 50 : width;
-    height = height < 100 ? 100 : height;
-    
-    return Rect.fromLTWH(minX, minY, width, height);
+    return Rect.fromLTRB(minX, minY, maxX, maxY);
   }
-} 
+}

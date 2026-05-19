@@ -158,20 +158,19 @@ class _FeatureTestState extends State<FeatureTest> {
     setState(() {
       _status = "Testing object detection...";
     });
-    
-    // Run object detection
-    final detections = await ObjectRecognition.detectObjects(_originalImage!);
-    
-    // Draw detections on image
-    final annotatedImage = await ObjectRecognition.drawDetections(
-      _originalImage!,
-      detections,
-    );
-    
+
+    // ML Kit needs a file path; write the in-memory image out first.
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = File('${tempDir.path}/object_detection_input.jpg');
+    await tempFile.writeAsBytes(_originalImage!);
+
+    final detections =
+        await ObjectRecognition.detectObjectsFromPath(tempFile.path);
+
     setState(() {
       _detectedObjects = detections;
-      _processedImages['Object Detection'] = annotatedImage;
-      _status = "Object detection tested successfully. Found ${detections.length} objects.";
+      _status =
+          "Object detection tested successfully. Found ${detections.length} regions.";
     });
   }
 
