@@ -13,3 +13,4 @@ build/
 doc/assets/presets.gif
 doc/assets/effects.jpg
 doc/assets/redaction.jpg
+tool/ci/

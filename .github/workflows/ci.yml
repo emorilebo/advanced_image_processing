@@ -13,29 +13,29 @@ jobs:
     name: Package (stable)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib test tool
-      - run: flutter analyze
-      - run: flutter test
-      - run: flutter pub publish --dry-run
+      - run: tool/ci/run_logged.sh flutter pub get
+      - run: tool/ci/run_logged.sh dart format --output=none --set-exit-if-changed lib test tool
+      - run: tool/ci/run_logged.sh flutter analyze
+      - run: tool/ci/run_logged.sh flutter test
+      - run: tool/ci/run_logged.sh flutter pub publish --dry-run
 
   minimum-versions:
     name: Package (Flutter 3.32, lowest dependencies)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.0'
           cache: true
-      - run: flutter pub downgrade
-      - run: flutter analyze lib test
-      - run: flutter test
+      - run: tool/ci/run_logged.sh flutter pub downgrade
+      - run: tool/ci/run_logged.sh flutter analyze lib test
+      - run: tool/ci/run_logged.sh flutter test
 
   example:
     name: Example app
@@ -44,15 +44,15 @@ jobs:
       run:
         working-directory: example
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test
-      - run: flutter build web --release
+      - run: ../tool/ci/run_logged.sh flutter pub get
+      - run: ../tool/ci/run_logged.sh flutter analyze
+      - run: ../tool/ci/run_logged.sh flutter test
+      - run: ../tool/ci/run_logged.sh flutter build web --release
 
   example-android:
     name: Example app (Android APK)
@@ -61,8 +61,8 @@ jobs:
       run:
         working-directory: example
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -70,7 +70,7 @@ jobs:
         with:
           channel: stable
           cache: true
-      - run: flutter build apk --debug
+      - run: ../tool/ci/run_logged.sh flutter build apk --debug
 
   example-ios:
     name: Example app (iOS simulator)
@@ -79,9 +79,9 @@ jobs:
       run:
         working-directory: example
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - run: flutter build ios --simulator --debug
+      - run: ../tool/ci/run_logged.sh flutter build ios --simulator --debug
