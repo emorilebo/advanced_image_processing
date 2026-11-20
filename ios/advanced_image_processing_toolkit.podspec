@@ -4,12 +4,11 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'advanced_image_processing_toolkit'
-  s.version          = '0.2.0'
+  s.version          = '0.3.0'
   s.summary          = 'Advanced image processing toolkit for Flutter.'
   s.description      = <<-DESC
-A comprehensive Flutter image processing toolkit: filters, geometric
-transforms, watermarking, and ML-powered detection (objects, faces, text,
-pose).
+Fast, private, on-device image processing for Flutter: pipelines on
+background isolates, presets, LUTs, redaction and ML Kit detection.
                        DESC
   s.homepage         = 'https://github.com/emorilebo/advanced_image_processing'
   s.license          = { :file => '../LICENSE' }

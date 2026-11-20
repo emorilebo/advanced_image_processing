@@ -5,12 +5,14 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'advanced_image_processing_toolkit_platform_interface.dart';
 
 /// A web implementation of the AdvancedImageProcessingToolkit plugin.
-class AdvancedImageProcessingToolkitWeb extends AdvancedImageProcessingToolkitPlatform {
+class AdvancedImageProcessingToolkitWeb
+    extends AdvancedImageProcessingToolkitPlatform {
   /// Constructs a AdvancedImageProcessingToolkitWeb
   AdvancedImageProcessingToolkitWeb();
 
   static void registerWith(Registrar registrar) {
-    AdvancedImageProcessingToolkitPlatform.instance = AdvancedImageProcessingToolkitWeb();
+    AdvancedImageProcessingToolkitPlatform.instance =
+        AdvancedImageProcessingToolkitWeb();
   }
 
   /// Returns a [String] containing the version of the platform.
@@ -19,4 +21,4 @@ class AdvancedImageProcessingToolkitWeb extends AdvancedImageProcessingToolkitPl
     const version = kIsWeb ? 'Web' : 'Unknown';
     return version;
   }
-} 
+}

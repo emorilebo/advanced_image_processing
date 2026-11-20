@@ -1,3 +1,16 @@
+/// Fast, private, on-device image processing for Flutter.
+///
+/// - [ImagePipeline]: chain any number of operations; decode once, encode
+///   once, on a background isolate.
+/// - [FilterPreset] and [ColorMatrix]: looks you can preview live on the
+///   GPU and export pixel-identically.
+/// - [CubeLut]: professional `.cube` colour grades.
+/// - [ObjectRecognition]: ML Kit faces, text, pose and objects, plus
+///   one-call redaction.
+/// - Widgets: [ImageCompareSlider], [DetectionOverlay].
+/// - [ImageFilters]: one-call filters, kept for 0.2.x code.
+library;
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -5,64 +18,54 @@ import 'package:flutter/foundation.dart';
 import 'advanced_image_processing_toolkit_platform_interface.dart';
 import 'src/platform_support.dart' as platform;
 
-export 'src/filters.dart';
+export 'engine.dart';
 export 'src/augmented_reality.dart';
-// ML Kit depends on `dart:io`; on the web we export a stub that throws
-// `UnsupportedError` so consumer apps still compile.
-export 'src/object_recognition.dart'
-    if (dart.library.html) 'src/object_recognition_web_stub.dart';
+export 'src/detection/detected_object.dart';
+// ML Kit needs dart:io; the web build gets a stub that throws.
+export 'src/detection/object_recognition.dart'
+    if (dart.library.js_interop) 'src/detection/object_recognition_web.dart';
+export 'src/filters.dart';
+export 'src/widgets/color_matrix_filter.dart';
+export 'src/widgets/detection_overlay.dart';
+export 'src/widgets/image_compare_slider.dart';
 
-/// Entry point for the Advanced Image Processing Toolkit.
-///
-/// Provides:
-/// - Image filters (grayscale, blur, brightness, sepia, invert, vignette,
-///   watercolor, oil-painting, contrast, saturation, watermark)
-/// - Geometric transforms (resize, rotate, crop, flip)
-/// - ML-powered detection (objects, faces, text, pose) via Google ML Kit
-/// - Augmented-reality method channels (consumer app must add ARKit/ARCore)
+/// Toolkit-level information and setup.
 class AdvancedImageProcessingToolkit {
   AdvancedImageProcessingToolkit._();
 
   /// Toolkit version. Kept in sync with `pubspec.yaml`.
-  static const String version = '0.2.0';
+  static const String version = '0.3.0';
 
   static bool _isInitialized = false;
 
-  /// Initializes the toolkit. Safe to call multiple times.
-  ///
-  /// Returns `true` on success. AR is silently disabled on platforms where
-  /// it cannot run (web, desktop) regardless of [enableAR].
+  /// Marks the toolkit as initialised. Optional: every API works without
+  /// it. Detectors are created lazily on first use.
   static Future<bool> initialize({
     bool enableObjectDetection = true,
-    bool enableAR = true,
+    @Deprecated('AR support is deprecated and will be removed in 0.4.0.')
+    bool enableAR = false,
   }) async {
-    if (enableAR && !isARSupported()) {
-      debugPrint(
-        'AdvancedImageProcessingToolkit: AR requested but not supported on '
-        'this platform — continuing without AR.',
-      );
-    }
     _isInitialized = true;
     return true;
   }
 
-  /// Whether [initialize] has completed.
+  /// Whether [initialize] has been called.
   static bool get isInitialized => _isInitialized;
 
-  /// Returns the native platform version (e.g. "Android 14", "iOS 17.4").
-  ///
-  /// Returns `null` on platforms where the plugin is not registered.
-  static Future<String?> getPlatformVersion() {
-    return AdvancedImageProcessingToolkitPlatform.instance.getPlatformVersion();
-  }
+  /// The native platform version, e.g. "Android 14" or "iOS 17.4".
+  static Future<String?> getPlatformVersion() =>
+      AdvancedImageProcessingToolkitPlatform.instance.getPlatformVersion();
 
-  /// Whether AR features can run on this device.
-  ///
-  /// Returns `true` only on Android and iOS. Note: this does NOT check whether
-  /// the consumer app has added `arkit_plugin` / `arcore_flutter_plugin` —
-  /// AR calls will fail at runtime if those are missing.
-  static bool isARSupported() {
-    if (kIsWeb) return false;
-    return platform.isAndroid || platform.isIOS;
-  }
+  /// Whether ML Kit detection can run here (Android and iOS).
+  static bool get isDetectionSupported =>
+      !kIsWeb && (platform.isAndroid || platform.isIOS);
+
+  /// Whether pipelines run on a background isolate here (everything except
+  /// the web).
+  static bool get runsInBackground => !kIsWeb;
+
+  /// Whether the OS could host AR. See [AugmentedReality].
+  @Deprecated('AR support is deprecated and will be removed in 0.4.0.')
+  static bool isARSupported() =>
+      !kIsWeb && (platform.isAndroid || platform.isIOS);
 }

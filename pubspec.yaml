@@ -1,14 +1,33 @@
 name: advanced_image_processing_toolkit
-description: Flutter image processing toolkit with filters, geometric transforms, watermarking, ML-powered detection (objects, faces, text, pose), and AR hooks.
-version: 0.2.0
+description: >-
+  Fast, private, on-device image processing for Flutter. Chainable pipelines
+  on background isolates, live GPU presets, .cube LUTs, face and text
+  redaction, EXIF-safe output and ML Kit detection.
+version: 0.3.0
 homepage: https://github.com/emorilebo/advanced_image_processing
 repository: https://github.com/emorilebo/advanced_image_processing
 issue_tracker: https://github.com/emorilebo/advanced_image_processing/issues
 documentation: https://github.com/emorilebo/advanced_image_processing#readme
 
+screenshots:
+  - description: An original photo split against the Golden Hour preset.
+    path: doc/assets/hero.jpg
+  - description: The 12 built-in presets, previewable live on the GPU.
+    path: doc/assets/presets.jpg
+  - description: Toolkit Studio, the example app, on desktop and phone.
+    path: doc/assets/app.jpg
+
+topics:
+  - image-processing
+  - image
+  - filters
+  - privacy
+  - ml-kit
+
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: '>=3.3.0'
+  # google_mlkit_* need Dart 3.8 / Flutter 3.32 at minimum.
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: '>=3.32.0'
 
 dependencies:
   flutter:
@@ -19,23 +38,19 @@ dependencies:
   image: ^4.5.4
   logging: ^1.2.0
 
-  # ML Kit — individual packages only (the umbrella `google_ml_kit` pulls in
-  # every model and bloats consumer apps).
-  google_mlkit_commons: ^0.11.0
-  google_mlkit_object_detection: ^0.15.0
-  google_mlkit_text_recognition: ^0.15.0
-  google_mlkit_face_detection: ^0.13.0
-  google_mlkit_pose_detection: ^0.14.0
-
-  # NOTE: AR is opt-in. To use `AugmentedReality.*`, add to YOUR app's pubspec:
-  #   arkit_plugin: ^1.1.0          # iOS
-  #   arcore_flutter_plugin: ^0.1.0 # Android (community-maintained)
-  # This package only wires the method channels; it does not bundle the AR SDKs.
+  # Individual ML Kit packages (the umbrella `google_ml_kit` bloats apps).
+  # The 0.x and 1.x lines share the same Dart API; 1.x needs Flutter 3.44+,
+  # so these ranges let older Flutter versions keep resolving 0.x.
+  google_mlkit_commons: '>=0.11.0 <2.0.0'
+  google_mlkit_object_detection: '>=0.15.0 <2.0.0'
+  google_mlkit_text_recognition: '>=0.15.0 <2.0.0'
+  google_mlkit_face_detection: '>=0.13.0 <2.0.0'
+  google_mlkit_pose_detection: '>=0.14.0 <2.0.0'
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.1
+  flutter_lints: ^6.0.0
 
 flutter:
   plugin:

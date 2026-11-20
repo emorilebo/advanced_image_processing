@@ -2,13 +2,15 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'advanced_image_processing_toolkit_method_channel.dart';
 
-abstract class AdvancedImageProcessingToolkitPlatform extends PlatformInterface {
+abstract class AdvancedImageProcessingToolkitPlatform
+    extends PlatformInterface {
   /// Constructs a AdvancedImageProcessingToolkitPlatform.
   AdvancedImageProcessingToolkitPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static AdvancedImageProcessingToolkitPlatform _instance = MethodChannelAdvancedImageProcessingToolkit();
+  static AdvancedImageProcessingToolkitPlatform _instance =
+      MethodChannelAdvancedImageProcessingToolkit();
 
   /// The default instance of [AdvancedImageProcessingToolkitPlatform] to use.
   ///

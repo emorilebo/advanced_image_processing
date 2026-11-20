@@ -8,20 +8,24 @@ import 'platform_support.dart' as platform;
 
 final _logger = Logger('AugmentedReality');
 
-/// Augmented-reality method channel bindings.
+/// Deprecated augmented-reality channel bindings.
 ///
-/// This package only wires the channel calls — to actually use AR you must
-/// add the platform AR plugins to your own app:
-/// - iOS:     `arkit_plugin`
-/// - Android: `arcore_flutter_plugin`
-///
-/// All methods return `false` (or no-op) on platforms where AR is not
-/// supported (web, desktop) so they're safe to call unconditionally.
+/// This class never had a native implementation: the
+/// `advanced_image_processing_toolkit/augmented_reality` channel is not
+/// handled on Android or iOS, and adding `arkit_plugin` or
+/// `arcore_flutter_plugin` does not register it either. Every call therefore
+/// returns `false`. It is kept only so 0.2.x code still compiles, and will be
+/// removed in 0.4.0. Use `arkit_plugin` / `ar_flutter_plugin` directly.
+@Deprecated(
+  'AugmentedReality never had a native implementation and always returns '
+  'false. Use an AR plugin directly. Will be removed in 0.4.0.',
+)
 class AugmentedReality {
   AugmentedReality._();
 
-  static const MethodChannel _channel =
-      MethodChannel('advanced_image_processing_toolkit/augmented_reality');
+  static const MethodChannel _channel = MethodChannel(
+    'advanced_image_processing_toolkit/augmented_reality',
+  );
 
   static bool _isSessionRunning = false;
 
@@ -78,19 +82,18 @@ class AugmentedReality {
       return false;
     }
     if (!_isSessionRunning) {
-      _logger.warning('AR session is not running. Call startARSession() first.');
+      _logger.warning(
+        'AR session is not running. Call startARSession() first.',
+      );
       return false;
     }
     try {
-      final result = await _channel.invokeMethod<bool>(
-        'placeModel',
-        {
-          'modelPath': modelPath,
-          'position': position,
-          'scale': scale,
-          'rotation': rotation,
-        },
-      );
+      final result = await _channel.invokeMethod<bool>('placeModel', {
+        'modelPath': modelPath,
+        'position': position,
+        'scale': scale,
+        'rotation': rotation,
+      });
       return result ?? false;
     } catch (e) {
       _logger.warning('Failed to place 3D model: $e');
