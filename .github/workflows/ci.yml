@@ -34,8 +34,10 @@ jobs:
         with:
           flutter-version: '3.32.0'
           cache: true
-      # The example tracks the latest stable SDK, so resolve the package only.
-      - run: tool/ci/run_logged.sh flutter pub downgrade --no-example
+      # The example tracks the latest stable SDK and its pubspec uses keys
+      # Flutter 3.32 rejects, so test the package on its own.
+      - run: rm -rf example
+      - run: tool/ci/run_logged.sh flutter pub downgrade
       - run: tool/ci/run_logged.sh flutter analyze --no-pub lib test
       - run: tool/ci/run_logged.sh flutter test --no-pub
 
