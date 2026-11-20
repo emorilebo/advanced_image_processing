@@ -20,7 +20,8 @@ jobs:
           cache: true
       - run: tool/ci/run_logged.sh flutter pub get
       - run: tool/ci/run_logged.sh dart format --output=none --set-exit-if-changed lib test tool
-      - run: tool/ci/run_logged.sh flutter analyze
+      # The example has its own job; analyse the package strictly.
+      - run: tool/ci/run_logged.sh flutter analyze lib test tool
       - run: tool/ci/run_logged.sh flutter test
       - run: tool/ci/run_logged.sh flutter pub publish --dry-run
 
@@ -33,9 +34,10 @@ jobs:
         with:
           flutter-version: '3.32.0'
           cache: true
-      - run: tool/ci/run_logged.sh flutter pub downgrade
-      - run: tool/ci/run_logged.sh flutter analyze lib test
-      - run: tool/ci/run_logged.sh flutter test
+      # The example tracks the latest stable SDK, so resolve the package only.
+      - run: tool/ci/run_logged.sh flutter pub downgrade --no-example
+      - run: tool/ci/run_logged.sh flutter analyze --no-pub lib test
+      - run: tool/ci/run_logged.sh flutter test --no-pub
 
   example:
     name: Example app
@@ -50,7 +52,9 @@ jobs:
           channel: stable
           cache: true
       - run: ../tool/ci/run_logged.sh flutter pub get
-      - run: ../tool/ci/run_logged.sh flutter analyze
+      # Flutter 3.47+ deprecates package:flutter/material.dart; the example
+      # keeps it so it still runs on older SDKs. Warnings and errors stay fatal.
+      - run: ../tool/ci/run_logged.sh flutter analyze --no-fatal-infos
       - run: ../tool/ci/run_logged.sh flutter test
       - run: ../tool/ci/run_logged.sh flutter build web --release
 

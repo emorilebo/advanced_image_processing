@@ -1,5 +1,5 @@
 import 'package:advanced_image_processing_toolkit/advanced_image_processing_toolkit.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _host(Widget child) => Directionality(
@@ -14,8 +14,14 @@ void main() {
       await tester.pumpWidget(
         _host(
           ImageCompareSlider(
-            before: const ColoredBox(color: Colors.red, key: Key('before')),
-            after: const ColoredBox(color: Colors.blue, key: Key('after')),
+            before: const ColoredBox(
+              color: Color(0xFFFF0000),
+              key: Key('before'),
+            ),
+            after: const ColoredBox(
+              color: Color(0xFF0000FF),
+              key: Key('after'),
+            ),
             onChanged: positions.add,
           ),
         ),
@@ -95,7 +101,7 @@ void main() {
                 type: DetectorType.face,
               ),
             ],
-            child: ColoredBox(color: Colors.black),
+            child: ColoredBox(color: Color(0xFF000000)),
           ),
         ),
       );
