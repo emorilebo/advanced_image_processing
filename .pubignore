@@ -1,0 +1,15 @@
+# .pubignore replaces .gitignore for publishing, so repeat what matters.
+.DS_Store
+.idea/
+*.iml
+.dart_tool/
+build/
+/pubspec.lock
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# CI and README-only assets (the README links to them on GitHub).
+.github/
+doc/assets/presets.gif
+doc/assets/effects.jpg
+doc/assets/redaction.jpg

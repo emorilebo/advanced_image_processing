@@ -1,0 +1,5 @@
+# left top width height (px) for example/assets/people_sample.jpg 1600x1066
+290 440 193 193
+838 437 156 156
+666 302 82 82
+1210 260 79 79
